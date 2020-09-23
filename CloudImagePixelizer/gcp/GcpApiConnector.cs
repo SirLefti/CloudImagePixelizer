@@ -8,6 +8,7 @@ namespace CloudImagePixelizer.gcp
 	public class GcpApiConnector : IConnector
 	{
 		private const string AnnotateEndpoint = "https://vision.googleapis.com/v1/images:annotate";
+		private readonly string _apiKey;
 		private readonly WebRequest _http;
 		
 		/// <summary>
@@ -16,10 +17,7 @@ namespace CloudImagePixelizer.gcp
 		/// <param name="apiKey"></param>
 		public GcpApiConnector(string apiKey)
 		{
-			var http = WebRequest.Create(AnnotateEndpoint + "?key=" + apiKey);
-			http.Method = "POST";
-			http.ContentType = "application/json";
-			_http = http;
+			_apiKey = apiKey;
 		}
 		
 		/// <summary>
@@ -29,7 +27,10 @@ namespace CloudImagePixelizer.gcp
 		/// <returns></returns>
 		public IFeatureExtractor AnalyseImage(string imagePath)
 		{
-			return new GcpApiFeatureExtractor(imagePath, _http);
+			var http = WebRequest.Create(AnnotateEndpoint + "?key=" + _apiKey);
+			http.Method = "POST";
+			http.ContentType = "application/json";
+			return new GcpApiFeatureExtractor(imagePath, http);
 		}
 
 		/// <summary>
@@ -39,7 +40,10 @@ namespace CloudImagePixelizer.gcp
 		/// <returns></returns>
 		public IFeatureExtractor AnalyseImage(Stream imageStream)
 		{
-			return new GcpApiFeatureExtractor(imageStream, _http);
+			var http = WebRequest.Create(AnnotateEndpoint + "?key=" + _apiKey);
+			http.Method = "POST";
+			http.ContentType = "application/json";
+			return new GcpApiFeatureExtractor(imageStream, http);
 		}
 	}
 }
