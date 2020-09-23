@@ -1,0 +1,16 @@
+# Language/Platform files
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+
+# MacOS files
+/.DS_Store
+
+# IDEA files
+.idea/
+*.iml
+
+# Project files
+/TestApplication
