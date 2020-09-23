@@ -22,8 +22,8 @@ namespace CloudImagePixelizer.gcp
 		public GcpFeatureExtractor(string imagePath, string credentialsPath)
 		{
 			var size = System.Drawing.Image.FromFile(imagePath).Size;
-			_width = size.Width;
-			_height = size.Height;
+			Width = size.Width;
+			Height = size.Height;
 			var visionImage = Image.FromFile(imagePath);
 			_client = new ImageAnnotatorClientBuilder()
 			{
@@ -49,8 +49,8 @@ namespace CloudImagePixelizer.gcp
 		public GcpFeatureExtractor(Stream imageStream, string credentialsPath)
 		{
 			var size = System.Drawing.Image.FromStream(imageStream).Size;
-			_width = size.Width;
-			_height = size.Height;
+			Width = size.Width;
+			Height = size.Height;
 			var visionImage = Image.FromStream(imageStream);
 			_client = new ImageAnnotatorClientBuilder()
 			{
@@ -77,8 +77,8 @@ namespace CloudImagePixelizer.gcp
 		internal GcpFeatureExtractor(string imagePath, ImageAnnotatorClient client)
 		{
 			var size = System.Drawing.Image.FromFile(imagePath).Size;
-			_width = size.Width;
-			_height = size.Height;
+			Width = size.Width;
+			Height = size.Height;
 			_client = client;
 			_request = new AnnotateImageRequest()
 			{
@@ -101,8 +101,8 @@ namespace CloudImagePixelizer.gcp
 		internal GcpFeatureExtractor(Stream imageStream, ImageAnnotatorClient client)
 		{
 			var size = System.Drawing.Image.FromStream(imageStream).Size;
-			_width = size.Width;
-			_height = size.Height;
+			Width = size.Width;
+			Height = size.Height;
 			_client = client;
 			_request = new AnnotateImageRequest()
 			{
@@ -123,8 +123,8 @@ namespace CloudImagePixelizer.gcp
 		{
 		}
 		
-		private readonly int _width;
-		private readonly int _height;
+		protected int Width;
+		protected int Height;
 
 		private readonly ImageAnnotatorClient _client;
 		private readonly AnnotateImageRequest _request;
@@ -155,7 +155,7 @@ namespace CloudImagePixelizer.gcp
 			_response ??= Fetch();
 			
 			return _response.LocalizedObjectAnnotations.Where(e => e.Name == "Car")
-				.Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, _width, _height));
+				.Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, Width, Height));
 		}
 
 		public async Task<IEnumerable<Rectangle>> AsyncExtractText()
@@ -183,7 +183,7 @@ namespace CloudImagePixelizer.gcp
 			_response ??= Fetch();
 
 			return _response.LocalizedObjectAnnotations.Where(e => e.Name == " Person")
-				.Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, _width, _height));
+				.Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, Width, Height));
 		}
 
 		protected virtual async Task<AnnotateImageResponse> AsyncFetch()

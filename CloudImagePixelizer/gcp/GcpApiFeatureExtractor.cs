@@ -7,6 +7,7 @@ using Google.Cloud.Vision.V1;
 using Google.Protobuf.Collections;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Image = System.Drawing.Image;
 
 namespace CloudImagePixelizer.gcp
 {
@@ -25,6 +26,10 @@ namespace CloudImagePixelizer.gcp
 		/// <param name="apiKey"></param>
 		public GcpApiFeatureExtractor(string imagePath, string apiKey)
 		{
+			var size = Image.FromFile(imagePath).Size;
+			Width = size.Width;
+			Height = size.Height;
+			
 			var http = WebRequest.Create(AnnotateEndpoint + "?key=" + apiKey);
 			http.Method = "POST";
 			http.ContentType = "application/json";
@@ -49,6 +54,10 @@ namespace CloudImagePixelizer.gcp
 		/// <param name="apiKey"></param>
 		public GcpApiFeatureExtractor(Stream imageStream, string apiKey)
 		{
+			var size = Image.FromStream(imageStream).Size;
+			Width = size.Width;
+			Height = size.Height;
+			
 			var http = WebRequest.Create(AnnotateEndpoint + "?key=" + apiKey);
 			http.Method = "POST";
 			http.ContentType = "application/json";
@@ -73,6 +82,10 @@ namespace CloudImagePixelizer.gcp
 		/// <param name="http"></param>
 		internal GcpApiFeatureExtractor(string imagePath, WebRequest http)
 		{
+			var size = Image.FromFile(imagePath).Size;
+			Width = size.Width;
+			Height = size.Height;
+			
 			_http = http;
 			_request = new InnerAnnotateImageRequest
 			{
@@ -94,6 +107,9 @@ namespace CloudImagePixelizer.gcp
 		/// <param name="http"></param>
 		internal GcpApiFeatureExtractor(Stream imageStream, WebRequest http)
 		{
+			var size = Image.FromStream(imageStream).Size;
+			Width = size.Width;
+			Height = size.Height;
 			_http = http;
 			_request = new InnerAnnotateImageRequest
 			{

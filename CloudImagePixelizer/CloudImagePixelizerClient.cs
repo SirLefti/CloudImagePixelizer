@@ -27,8 +27,7 @@ namespace CloudImagePixelizer
 	        var origin = SKCodec.Create(imagePath).EncodedOrigin;
 	        return await Pixelate(bitmap, origin, _cloudConnector.AnalyseImage(imagePath));
         }
-
-        // TODO debug this, stream is not readable
+        
         public async Task<Stream> PixelateSingleImage(FileStream imageStream)
         {
 	        var bitmap = SKBitmap.Decode(imageStream);
@@ -54,8 +53,7 @@ namespace CloudImagePixelizer
             await using var fileStream = File.Create(outputPath);
             await output.CopyToAsync(fileStream);
         }
-
-        // TODO implement, crashes while stream dispatching or stuff like this
+        
         public async Task PixelateImageBatch(string inputDirectory, string outputDirectory)
         {
 	        var imageFiles = Directory.GetFiles(inputDirectory, "*.jpg", SearchOption.AllDirectories)

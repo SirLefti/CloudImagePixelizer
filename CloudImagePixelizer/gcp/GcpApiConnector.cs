@@ -9,7 +9,6 @@ namespace CloudImagePixelizer.gcp
 	{
 		private const string AnnotateEndpoint = "https://vision.googleapis.com/v1/images:annotate";
 		private readonly string _apiKey;
-		private readonly WebRequest _http;
 		
 		/// <summary>
 		/// Constructor for an API connector.
