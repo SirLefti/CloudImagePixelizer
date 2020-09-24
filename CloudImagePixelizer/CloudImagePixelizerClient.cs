@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -56,15 +57,30 @@ namespace CloudImagePixelizer
         
         public async Task PixelateImageBatch(string inputDirectory, string outputDirectory)
         {
-	        var imageFiles = Directory.GetFiles(inputDirectory, "*.jpg", SearchOption.AllDirectories)
-		        .Select(f => f.Substring(inputDirectory.Length))
-		        .Select(f => f.StartsWith(Path.DirectorySeparatorChar) ? f.Substring(1) : f); // cut off directory separator if exists
+	        var allowedExtensions = new[] {".jpg", ".jpeg", ".png"};
+	        var imageFiles = GetImageFiles(inputDirectory, allowedExtensions, true);
 	        foreach (var imageFile in imageFiles)
 	        {
 		        await PixelateSingleImage(Path.Combine(inputDirectory, imageFile), Path.Combine(outputDirectory, imageFile));
 	        }
         }
 
+        private static IEnumerable<string> GetImageFiles(string rootPath, string[] allowedExtensions, bool recursively)
+        {
+	        var root = new DirectoryInfo(rootPath);
+	        var imageFiles = root.GetFiles()
+		        .Where(f => !f.Attributes.HasFlag(FileAttributes.Hidden))
+		        .Where(f => allowedExtensions.Contains(f.Extension))
+		        .Select(f => f.Name);
+	        if (!recursively) return imageFiles;
+
+	        foreach (var directory in root.GetDirectories())
+	        {
+		        imageFiles = imageFiles.Concat(GetImageFiles(directory.FullName, allowedExtensions, recursively));
+	        }
+	        return imageFiles;
+        }
+        
         private async Task<Stream> Pixelate(SKBitmap bitmap, SKEncodedOrigin origin, IFeatureExtractor featureExtractor)
         {
 	        // fix orientation if encoded origin is not TopLeft/Default
