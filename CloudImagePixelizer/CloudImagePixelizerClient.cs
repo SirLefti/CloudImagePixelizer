@@ -76,7 +76,7 @@ namespace CloudImagePixelizer
 
 	        foreach (var directory in root.GetDirectories())
 	        {
-		        imageFiles = imageFiles.Concat(GetImageFiles(directory.FullName, allowedExtensions, recursively));
+		        imageFiles = imageFiles.Concat(GetImageFiles(directory.FullName, allowedExtensions, recursively).Select(f => directory.FullName.Substring(rootPath.Length + 1) + Path.DirectorySeparatorChar + f));
 	        }
 	        return imageFiles;
         }
