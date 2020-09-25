@@ -13,4 +13,4 @@ riderModule.iml
 *.iml
 
 # Project files
-/TestApplication
+TestApplication/

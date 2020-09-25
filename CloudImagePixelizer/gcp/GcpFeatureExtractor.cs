@@ -130,9 +130,9 @@ namespace CloudImagePixelizer.gcp
 		private readonly AnnotateImageRequest _request;
 		private AnnotateImageResponse _response;
 
-		public async Task<IEnumerable<Rectangle>> AsyncExtractFaces()
+		public async Task<IEnumerable<Rectangle>> ExtractFacesAsync()
 		{
-			_response ??= await AsyncFetch();
+			_response ??= await FetchAsync();
 			return ExtractFaces();
 		}
 		
@@ -144,9 +144,9 @@ namespace CloudImagePixelizer.gcp
 				.Select(f => GoogleVisionCoordinateTranslator.AbsolutePolyToRectangle(f.BoundingPoly));
 		}
 		
-		public async Task<IEnumerable<Rectangle>> AsyncExtractCars()
+		public async Task<IEnumerable<Rectangle>> ExtractCarsAsync()
 		{
-			_response ??= await AsyncFetch();
+			_response ??= await FetchAsync();
 			return ExtractCars();
 		}
 
@@ -158,9 +158,9 @@ namespace CloudImagePixelizer.gcp
 				.Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, Width, Height));
 		}
 
-		public async Task<IEnumerable<Rectangle>> AsyncExtractText()
+		public async Task<IEnumerable<Rectangle>> ExtractTextAsync()
 		{
-			_response ??= await AsyncFetch();
+			_response ??= await FetchAsync();
 			return ExtractText();
 		}
 
@@ -173,9 +173,9 @@ namespace CloudImagePixelizer.gcp
 				.Select(t => GoogleVisionCoordinateTranslator.AbsolutePolyToRectangle(t.BoundingPoly));
 		}
 
-		public async Task<IEnumerable<Rectangle>> AsyncExtractPersons()
+		public async Task<IEnumerable<Rectangle>> ExtractPersonsAsync()
 		{
-			_response ??= await AsyncFetch();
+			_response ??= await FetchAsync();
 			return ExtractPersons();
 		}
 		public IEnumerable<Rectangle> ExtractPersons()
@@ -186,7 +186,7 @@ namespace CloudImagePixelizer.gcp
 				.Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, Width, Height));
 		}
 
-		protected virtual async Task<AnnotateImageResponse> AsyncFetch()
+		protected virtual async Task<AnnotateImageResponse> FetchAsync()
 		{
 			return await _client.AnnotateAsync(_request);
 		}

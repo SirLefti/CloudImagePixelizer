@@ -14,9 +14,9 @@ namespace CloudImagePixelizer
 		public IEnumerable<Rectangle> ExtractText();
 		public IEnumerable<Rectangle> ExtractPersons();
 		
-		public Task<IEnumerable<Rectangle>> AsyncExtractFaces();
-		public Task<IEnumerable<Rectangle>> AsyncExtractCars();
-		public Task<IEnumerable<Rectangle>> AsyncExtractText();
-		public Task<IEnumerable<Rectangle>> AsyncExtractPersons();
+		public Task<IEnumerable<Rectangle>> ExtractFacesAsync();
+		public Task<IEnumerable<Rectangle>> ExtractCarsAsync();
+		public Task<IEnumerable<Rectangle>> ExtractTextAsync();
+		public Task<IEnumerable<Rectangle>> ExtractPersonsAsync();
 	}
 }

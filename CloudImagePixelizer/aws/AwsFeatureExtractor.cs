@@ -118,7 +118,7 @@ namespace CloudImagePixelizer.aws
         protected int Width;
         protected int Height;
 
-        public async Task<IEnumerable<Rectangle>> AsyncExtractFaces()
+        public async Task<IEnumerable<Rectangle>> ExtractFacesAsync()
         {
             if (FacesResponse == null)
             {
@@ -148,7 +148,7 @@ namespace CloudImagePixelizer.aws
                 AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(f.BoundingBox, Width, Height));
         }
 
-        public async Task<IEnumerable<Rectangle>> AsyncExtractCars()
+        public async Task<IEnumerable<Rectangle>> ExtractCarsAsync()
         {
             if (ObjectsResponse == null)
             {
@@ -182,7 +182,7 @@ namespace CloudImagePixelizer.aws
                         Width, Height)) ?? Enumerable.Empty<Rectangle>();
         }
 
-        public async Task<IEnumerable<Rectangle>> AsyncExtractText()
+        public async Task<IEnumerable<Rectangle>> ExtractTextAsync()
         {
             if (TextResponse == null)
             {
@@ -214,7 +214,7 @@ namespace CloudImagePixelizer.aws
                     Height));
         }
 
-        public async Task<IEnumerable<Rectangle>> AsyncExtractPersons()
+        public async Task<IEnumerable<Rectangle>> ExtractPersonsAsync()
         {
             if (ObjectsResponse == null)
             {

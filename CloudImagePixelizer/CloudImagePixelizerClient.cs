@@ -99,7 +99,7 @@ namespace CloudImagePixelizer
 	        {
 		        case FaceProcessing.PixelateFaces:
 		        {
-			        var faces = await featureExtractor.AsyncExtractFaces();
+			        var faces = await featureExtractor.ExtractFacesAsync();
 			        foreach (var face in faces)
 			        {
 				        Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap,
@@ -110,7 +110,7 @@ namespace CloudImagePixelizer
 		        }
 		        case FaceProcessing.PixelatePersons:
 		        {
-			        var persons = await featureExtractor.AsyncExtractPersons();
+			        var persons = await featureExtractor.ExtractPersonsAsync();
 			        foreach (var person in persons)
 			        {
 				        Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
@@ -129,8 +129,8 @@ namespace CloudImagePixelizer
 	        {
 		        case CarProcessing.PixelateTextOnCars:
 		        {
-			        var text = await featureExtractor.AsyncExtractText();
-			        var cars = await featureExtractor.AsyncExtractCars();
+			        var text = await featureExtractor.ExtractTextAsync();
+			        var cars = await featureExtractor.ExtractCarsAsync();
 
 			        var mergeDistance = (int) (bitmap.Width * MergeFactor);
 			        var merged = ImagePatchClusterizer.Clusterize(text, mergeDistance);
@@ -153,7 +153,7 @@ namespace CloudImagePixelizer
 		        }
 		        case CarProcessing.PixelateCars:
 		        {
-			        var cars = await featureExtractor.AsyncExtractCars();
+			        var cars = await featureExtractor.ExtractCarsAsync();
 
 			        foreach (var car in cars)
 			        {

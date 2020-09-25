@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -13,10 +14,7 @@ using Image = System.Drawing.Image;
 
 namespace CloudImagePixelizer.gcp
 {
-    /// <summary>
-    /// Feature extractor using a HTTP-POST to the Google Cloud Platform
-    /// </summary>
-    public class GcpApiFeatureExtractor : GcpFeatureExtractor
+    public class GcpReworkedApiFeatureExtractor : GcpReworkedFeatureExtractor
     {
         private const string AnnotateEndpoint = "https://vision.googleapis.com/v1/images:annotate";
 
@@ -34,7 +32,7 @@ namespace CloudImagePixelizer.gcp
         /// </summary>
         /// <param name="imagePath"></param>
         /// <param name="apiKey"></param>
-        public GcpApiFeatureExtractor(string imagePath, string apiKey)
+        public GcpReworkedApiFeatureExtractor(string imagePath, string apiKey)
         {
             var size = Image.FromFile(imagePath).Size;
             Width = size.Width;
@@ -44,16 +42,7 @@ namespace CloudImagePixelizer.gcp
             http.Method = "POST";
             http.ContentType = "application/json";
             _http = http;
-            _request = new InnerAnnotateImageRequest
-            {
-                Features =
-                {
-                    new Feature("TEXT_DETECTION"),
-                    new Feature("FACE_DETECTION"),
-                    new Feature("OBJECT_LOCALIZATION")
-                },
-                Image = new Base64Image(imagePath)
-            };
+            _image = new Base64Image(imagePath);
         }
 
         /// <summary>
@@ -62,7 +51,7 @@ namespace CloudImagePixelizer.gcp
         /// </summary>
         /// <param name="imageStream"></param>
         /// <param name="apiKey"></param>
-        public GcpApiFeatureExtractor(Stream imageStream, string apiKey)
+        public GcpReworkedApiFeatureExtractor(Stream imageStream, string apiKey)
         {
             var size = Image.FromStream(imageStream).Size;
             Width = size.Width;
@@ -72,16 +61,7 @@ namespace CloudImagePixelizer.gcp
             http.Method = "POST";
             http.ContentType = "application/json";
             _http = http;
-            _request = new InnerAnnotateImageRequest
-            {
-                Features =
-                {
-                    new Feature("TEXT_DETECTION"),
-                    new Feature("FACE_DETECTION"),
-                    new Feature("OBJECT_LOCALIZATION")
-                },
-                Image = new Base64Image(imageStream)
-            };
+            _image = new Base64Image(imageStream);
         }
 
         /// <summary>
@@ -90,23 +70,13 @@ namespace CloudImagePixelizer.gcp
         /// </summary>
         /// <param name="imagePath"></param>
         /// <param name="http"></param>
-        internal GcpApiFeatureExtractor(string imagePath, WebRequest http)
+        internal GcpReworkedApiFeatureExtractor(string imagePath, WebRequest http)
         {
             var size = Image.FromFile(imagePath).Size;
             Width = size.Width;
             Height = size.Height;
-
             _http = http;
-            _request = new InnerAnnotateImageRequest
-            {
-                Features =
-                {
-                    new Feature("TEXT_DETECTION"),
-                    new Feature("FACE_DETECTION"),
-                    new Feature("OBJECT_LOCALIZATION")
-                },
-                Image = new Base64Image(imagePath)
-            };
+            _image = new Base64Image(imagePath);
         }
 
         /// <summary>
@@ -115,30 +85,42 @@ namespace CloudImagePixelizer.gcp
         /// </summary>
         /// <param name="imageStream"></param>
         /// <param name="http"></param>
-        internal GcpApiFeatureExtractor(Stream imageStream, WebRequest http)
+        internal GcpReworkedApiFeatureExtractor(Stream imageStream, WebRequest http)
         {
             var size = Image.FromStream(imageStream).Size;
             Width = size.Width;
             Height = size.Height;
             _http = http;
-            _request = new InnerAnnotateImageRequest
-            {
-                Features =
-                {
-                    new Feature("TEXT_DETECTION"),
-                    new Feature("FACE_DETECTION"),
-                    new Feature("OBJECT_LOCALIZATION")
-                },
-                Image = new Base64Image(imageStream)
-            };
+            _image = new Base64Image(imageStream);
         }
 
-        private readonly InnerAnnotateImageRequest _request;
         private readonly WebRequest _http;
+        private readonly Base64Image _image;
 
-        protected override async Task<AnnotateImageResponse> FetchAsync()
+        private AnnotateImageResponse Fetch(InnerAnnotateImageRequest request)
         {
-            var json = JsonConvert.SerializeObject(new RequestContainer(_request), Settings);
+            var json = JsonConvert.SerializeObject(new RequestContainer(request), Settings);
+            var bytes = Encoding.UTF8.GetBytes(json);
+
+            _http.GetRequestStream().Write(bytes, 0, bytes.Length);
+
+            var stream = _http.GetResponse().GetResponseStream();
+            if (stream == null) return null;
+
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            // convert types due to different internal handling
+            var response = reader.ReadToEnd().Replace("HYPHEN", "Hyphen")
+                .Replace("SPACE", "Space")
+                .Replace("UNKNOWN", "Unknown")
+                .Replace("LINE_BREAK", "LineBreak")
+                .Replace("SURE_SPACE", "SureSpace")
+                .Replace("EOL_SURE_SPACE", "EolSureSpace");
+            return JsonConvert.DeserializeObject<ResponseContainer>(response, Settings)?.Responses[0];
+        }
+
+        private async Task<AnnotateImageResponse> FetchAsync(InnerAnnotateImageRequest request)
+        {
+            var json = JsonConvert.SerializeObject(new RequestContainer(request), Settings);
             var bytes = Encoding.UTF8.GetBytes(json);
 
             await (await _http.GetRequestStreamAsync()).WriteAsync(bytes, 0, bytes.Length);
@@ -158,25 +140,93 @@ namespace CloudImagePixelizer.gcp
             return JsonConvert.DeserializeObject<ResponseContainer>(response, Settings)?.Responses[0];
         }
 
-        protected override AnnotateImageResponse Fetch()
+        public new IEnumerable<Rectangle> ExtractFaces()
         {
-            var json = JsonConvert.SerializeObject(new RequestContainer(_request), Settings);
-            var bytes = Encoding.UTF8.GetBytes(json);
+            FacesResponse ??= Fetch(new InnerAnnotateImageRequest
+            {
+                Features = {new Feature("FACE_DETECTION")},
+                Image = _image
+            });
 
-            _http.GetRequestStream().Write(bytes, 0, bytes.Length);
+            return base.ExtractFaces();
+        }
 
-            var stream = _http.GetResponse().GetResponseStream();
-            if (stream == null) return null;
+        public new async Task<IEnumerable<Rectangle>> ExtractFacesAsync()
+        {
+            FacesResponse ??= await FetchAsync(new InnerAnnotateImageRequest
+            {
+                Features = {new Feature("FACE_DETECTION")},
+                Image = _image
+            });
 
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-            // convert types due to different internal handling
-            var response = reader.ReadToEnd().Replace("HYPHEN", "Hyphen")
-                .Replace("SPACE", "Space")
-                .Replace("UNKNOWN", "Unknown")
-                .Replace("LINE_BREAK", "LineBreak")
-                .Replace("SURE_SPACE", "SureSpace")
-                .Replace("EOL_SURE_SPACE", "EolSureSpace");
-            return JsonConvert.DeserializeObject<ResponseContainer>(response, Settings)?.Responses[0];
+            return await base.ExtractFacesAsync();
+        }
+
+        public new IEnumerable<Rectangle> ExtractCars()
+        {
+            ObjectsResponse ??= Fetch(new InnerAnnotateImageRequest
+            {
+                
+                Features = {new Feature("OBJECT_LOCALIZATION")},
+                Image = _image
+            });
+
+            return base.ExtractCars();
+        }
+
+        public new async Task<IEnumerable<Rectangle>> ExtractCarsAsync()
+        {
+            ObjectsResponse ??= await FetchAsync(new InnerAnnotateImageRequest
+            {
+                Features = {new Feature("OBJECT_LOCALIZATION")},
+                Image = _image
+            });
+
+            return await base.ExtractCarsAsync();
+        }
+
+        public new IEnumerable<Rectangle> ExtractText()
+        {
+            TextResponse ??= Fetch(new InnerAnnotateImageRequest
+            {
+                Features = {new Feature("TEXT_DETECTION")},
+                Image = _image
+            });
+
+            return base.ExtractText();
+        }
+
+        public new async Task<IEnumerable<Rectangle>> ExtractTextAsync()
+        {
+            TextResponse ??= await FetchAsync(new InnerAnnotateImageRequest
+            {
+                Features = {new Feature("TEXT_DETECTION")},
+                Image = _image
+            });
+
+            return await base.ExtractTextAsync();
+        }
+
+        public new IEnumerable<Rectangle> ExtractPersons()
+        {
+            ObjectsResponse ??= Fetch(new InnerAnnotateImageRequest
+            {
+                Features = {new Feature("OBJECT_LOCALIZATION")},
+                Image = _image
+            });
+
+            return base.ExtractPersons();
+        }
+
+        public new async Task<IEnumerable<Rectangle>> ExtractPersonsAsync()
+        {
+            ObjectsResponse ??= await FetchAsync(new InnerAnnotateImageRequest
+            {
+                Features = {new Feature("OBJECT_LOCALIZATION")},
+                Image = _image
+            });
+
+            return await base.ExtractPersonsAsync();
         }
 
         private class LikelihoodEnumConverter : JsonConverter<Likelihood>
