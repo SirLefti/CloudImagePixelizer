@@ -8,6 +8,7 @@ using Amazon;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 using Amazon.Runtime;
+using SkiaSharp;
 using Image = Amazon.Rekognition.Model.Image;
 
 namespace CloudImagePixelizer.aws
@@ -27,8 +28,20 @@ namespace CloudImagePixelizer.aws
         public AwsFeatureExtractor(string imagePath, string accessKey, string secretKey, RegionEndpoint endpoint)
         {
             var size = System.Drawing.Image.FromFile(imagePath).Size;
-            _height = size.Height;
-            _width = size.Width;
+            var orientation = SKCodec.Create(imagePath).EncodedOrigin;
+
+            if ((int) orientation % 2 == 1)
+            {
+                // use standard bounding if image is not rotated or rotated by 180 degrees
+                _height = size.Height;
+                _width = size.Width;    
+            }
+            else
+            {
+                // flip height and width if image is rotated by 90 or 270 degrees
+                _height = size.Width;
+                _width = size.Height;
+            }
 
             _rekognitionImage = new Image();
 
@@ -50,8 +63,20 @@ namespace CloudImagePixelizer.aws
         public AwsFeatureExtractor(Stream imageStream, string accessKey, string secretKey, RegionEndpoint endpoint)
         {
             var size = System.Drawing.Image.FromStream(imageStream).Size;
-            _height = size.Height;
-            _width = size.Width;
+            var orientation = SKCodec.Create(imageStream).EncodedOrigin;
+
+            if ((int) orientation % 2 == 1)
+            {
+                // use standard bounding if image is not rotated or rotated by 180 degrees
+                _height = size.Height;
+                _width = size.Width;    
+            }
+            else
+            {
+                // flip height and width if image is rotated by 90 or 270 degrees
+                _height = size.Width;
+                _width = size.Height;
+            }
 
             _rekognitionImage = new Image();
             
@@ -71,8 +96,20 @@ namespace CloudImagePixelizer.aws
         internal AwsFeatureExtractor(string imagePath, AmazonRekognitionClient client)
         {
             var size = System.Drawing.Image.FromFile(imagePath).Size;
-            _height = size.Height;
-            _width = size.Width;
+            var orientation = SKCodec.Create(imagePath).EncodedOrigin;
+
+            if ((int) orientation % 2 == 1)
+            {
+                // use standard bounding if image is not rotated or rotated by 180 degrees
+                _height = size.Height;
+                _width = size.Width;    
+            }
+            else
+            {
+                // flip height and width if image is rotated by 90 or 270 degrees
+                _height = size.Width;
+                _width = size.Height;
+            }
             
             _rekognitionImage = new Image();
 
@@ -93,8 +130,20 @@ namespace CloudImagePixelizer.aws
         internal AwsFeatureExtractor(Stream imageStream, AmazonRekognitionClient client)
         {
             var size = System.Drawing.Image.FromStream(imageStream).Size;
-            _height = size.Height;
-            _width = size.Width;
+            var orientation = SKCodec.Create(imageStream).EncodedOrigin;
+
+            if ((int) orientation % 2 == 1)
+            {
+                // use standard bounding if image is not rotated or rotated by 180 degrees
+                _height = size.Height;
+                _width = size.Width;    
+            }
+            else
+            {
+                // flip height and width if image is rotated by 90 or 270 degrees
+                _height = size.Width;
+                _width = size.Height;
+            }
             
             _rekognitionImage = new Image();
             
@@ -103,10 +152,6 @@ namespace CloudImagePixelizer.aws
             _rekognitionImage.Bytes = new MemoryStream(data);
             
             _client = client;
-        }
-
-        protected AwsFeatureExtractor()
-        {
         }
 
         private readonly Image _rekognitionImage;
