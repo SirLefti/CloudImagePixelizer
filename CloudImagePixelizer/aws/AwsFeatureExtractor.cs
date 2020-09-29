@@ -27,8 +27,8 @@ namespace CloudImagePixelizer.aws
         public AwsFeatureExtractor(string imagePath, string accessKey, string secretKey, RegionEndpoint endpoint)
         {
             var size = System.Drawing.Image.FromFile(imagePath).Size;
-            Height = size.Height;
-            Width = size.Width;
+            _height = size.Height;
+            _width = size.Width;
 
             _rekognitionImage = new Image();
 
@@ -50,8 +50,8 @@ namespace CloudImagePixelizer.aws
         public AwsFeatureExtractor(Stream imageStream, string accessKey, string secretKey, RegionEndpoint endpoint)
         {
             var size = System.Drawing.Image.FromStream(imageStream).Size;
-            Height = size.Height;
-            Width = size.Width;
+            _height = size.Height;
+            _width = size.Width;
 
             _rekognitionImage = new Image();
             
@@ -71,8 +71,8 @@ namespace CloudImagePixelizer.aws
         internal AwsFeatureExtractor(string imagePath, AmazonRekognitionClient client)
         {
             var size = System.Drawing.Image.FromFile(imagePath).Size;
-            Height = size.Height;
-            Width = size.Width;
+            _height = size.Height;
+            _width = size.Width;
             
             _rekognitionImage = new Image();
 
@@ -93,8 +93,8 @@ namespace CloudImagePixelizer.aws
         internal AwsFeatureExtractor(Stream imageStream, AmazonRekognitionClient client)
         {
             var size = System.Drawing.Image.FromStream(imageStream).Size;
-            Height = size.Height;
-            Width = size.Width;
+            _height = size.Height;
+            _width = size.Width;
             
             _rekognitionImage = new Image();
             
@@ -111,141 +111,141 @@ namespace CloudImagePixelizer.aws
 
         private readonly Image _rekognitionImage;
         private readonly AmazonRekognitionClient _client;
-        protected DetectLabelsResponse ObjectsResponse;
-        protected DetectFacesResponse FacesResponse;
-        protected DetectTextResponse TextResponse;
+        private DetectLabelsResponse _objectsResponse;
+        private DetectFacesResponse _facesResponse;
+        private DetectTextResponse _textResponse;
 
-        protected int Width;
-        protected int Height;
+        private readonly int _width;
+        private readonly int _height;
 
         public async Task<IEnumerable<Rectangle>> ExtractFacesAsync()
         {
-            if (FacesResponse == null)
+            if (_facesResponse == null)
             {
                 var facesRequest = new DetectFacesRequest()
                 {
                     Image = _rekognitionImage
                 };
-                FacesResponse = await _client.DetectFacesAsync(facesRequest);
+                _facesResponse = await _client.DetectFacesAsync(facesRequest);
             }
 
-            return FacesResponse.FaceDetails.Select(f =>
-                AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(f.BoundingBox, Width, Height));
+            return _facesResponse.FaceDetails.Select(f =>
+                AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(f.BoundingBox, _width, _height));
         }
 
         public IEnumerable<Rectangle> ExtractFaces()
         {
-            if (FacesResponse == null)
+            if (_facesResponse == null)
             {
                 var facesRequest = new DetectFacesRequest()
                 {
                     Image = _rekognitionImage
                 };
-                FacesResponse = _client.DetectFacesAsync(facesRequest).Result;
+                _facesResponse = _client.DetectFacesAsync(facesRequest).Result;
             }
 
-            return FacesResponse.FaceDetails.Select(f =>
-                AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(f.BoundingBox, Width, Height));
+            return _facesResponse.FaceDetails.Select(f =>
+                AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(f.BoundingBox, _width, _height));
         }
 
         public async Task<IEnumerable<Rectangle>> ExtractCarsAsync()
         {
-            if (ObjectsResponse == null)
+            if (_objectsResponse == null)
             {
                 var objectsRequest = new DetectLabelsRequest()
                 {
                     Image = _rekognitionImage
                 };
-                ObjectsResponse = await _client.DetectLabelsAsync(objectsRequest);
+                _objectsResponse = await _client.DetectLabelsAsync(objectsRequest);
             }
 
-            return ObjectsResponse.Labels.Where(l => l.Name == "Car")
+            return _objectsResponse.Labels.Where(l => l.Name == "Car")
                 .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
                     AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox,
-                        Width, Height)) ?? Enumerable.Empty<Rectangle>();
+                        _width, _height)) ?? Enumerable.Empty<Rectangle>();
         }
 
         public IEnumerable<Rectangle> ExtractCars()
         {
-            if (ObjectsResponse == null)
+            if (_objectsResponse == null)
             {
                 var objectsRequest = new DetectLabelsRequest()
                 {
                     Image = _rekognitionImage
                 };
-                ObjectsResponse = _client.DetectLabelsAsync(objectsRequest).Result;
+                _objectsResponse = _client.DetectLabelsAsync(objectsRequest).Result;
             }
 
-            return ObjectsResponse.Labels.Where(l => l.Name == "Car")
+            return _objectsResponse.Labels.Where(l => l.Name == "Car")
                 .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
                     AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox,
-                        Width, Height)) ?? Enumerable.Empty<Rectangle>();
+                        _width, _height)) ?? Enumerable.Empty<Rectangle>();
         }
 
         public async Task<IEnumerable<Rectangle>> ExtractTextAsync()
         {
-            if (TextResponse == null)
+            if (_textResponse == null)
             {
                 var textRequest = new DetectTextRequest()
                 {
                     Image = _rekognitionImage
                 };
-                TextResponse = await _client.DetectTextAsync(textRequest);
+                _textResponse = await _client.DetectTextAsync(textRequest);
             }
 
-            return TextResponse.TextDetections.Select(t => t.Geometry.Polygon)
-                .Select(p => AmazonRekognitionCoordinateTranslator.RelativePolygonToAbsolute(p, Width,
-                    Height));
+            return _textResponse.TextDetections.Select(t => t.Geometry.Polygon)
+                .Select(p => AmazonRekognitionCoordinateTranslator.RelativePolygonToAbsolute(p, _width,
+                    _height));
         }
 
         public IEnumerable<Rectangle> ExtractText()
         {
-            if (TextResponse == null)
+            if (_textResponse == null)
             {
                 var textRequest = new DetectTextRequest()
                 {
                     Image = _rekognitionImage
                 };
-                TextResponse = _client.DetectTextAsync(textRequest).Result;
+                _textResponse = _client.DetectTextAsync(textRequest).Result;
             }
 
-            return TextResponse.TextDetections.Select(t => t.Geometry.Polygon)
-                .Select(p => AmazonRekognitionCoordinateTranslator.RelativePolygonToAbsolute(p, Width,
-                    Height));
+            return _textResponse.TextDetections.Select(t => t.Geometry.Polygon)
+                .Select(p => AmazonRekognitionCoordinateTranslator.RelativePolygonToAbsolute(p, _width,
+                    _height));
         }
 
         public async Task<IEnumerable<Rectangle>> ExtractPersonsAsync()
         {
-            if (ObjectsResponse == null)
+            if (_objectsResponse == null)
             {
                 var objectsRequest = new DetectLabelsRequest()
                 {
                     Image = _rekognitionImage
                 };
-                ObjectsResponse = await _client.DetectLabelsAsync(objectsRequest);
+                _objectsResponse = await _client.DetectLabelsAsync(objectsRequest);
             }
 
-            return ObjectsResponse.Labels.Where(l => l.Name == "Person")
+            return _objectsResponse.Labels.Where(l => l.Name == "Person")
                 .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
-                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, Width,
-                        Height)) ?? Enumerable.Empty<Rectangle>();
+                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
+                        _height)) ?? Enumerable.Empty<Rectangle>();
         }
 
         public IEnumerable<Rectangle> ExtractPersons()
         {
-            if (ObjectsResponse == null)
+            if (_objectsResponse == null)
             {
                 var objectsRequest = new DetectLabelsRequest()
                 {
                     Image = _rekognitionImage
                 };
-                ObjectsResponse = _client.DetectLabelsAsync(objectsRequest).Result;
+                _objectsResponse = _client.DetectLabelsAsync(objectsRequest).Result;
             }
 
-            return ObjectsResponse.Labels.Where(l => l.Name == "Person")
+            return _objectsResponse.Labels.Where(l => l.Name == "Person")
                 .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
-                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, Width,
-                        Height)) ?? Enumerable.Empty<Rectangle>();
+                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
+                        _height)) ?? Enumerable.Empty<Rectangle>();
         }
     }
 }
