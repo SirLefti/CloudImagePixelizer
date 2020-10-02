@@ -98,7 +98,7 @@ namespace CloudImagePixelizer.gcp
             var response = await reader.ReadToEndAsync();
             return JsonConvert.DeserializeObject<ResponseContainer>(response, Settings)?.Responses[0];
         }
-
+        
         public override IEnumerable<Rectangle> ExtractFaces()
         {
             FacesResponse ??= Fetch(new InnerAnnotateImageRequest

@@ -7,6 +7,10 @@ namespace CloudImagePixelizer.gcp
     {
         private readonly ImageAnnotatorClient _client;
 
+        /// <summary>
+        /// Constructor for a cloud connector using GCP.
+        /// </summary>
+        /// <param name="credentialsPath"></param>
         public GcpConnector(string credentialsPath)
         {
             _client = new ImageAnnotatorClientBuilder()
@@ -14,22 +18,12 @@ namespace CloudImagePixelizer.gcp
                 CredentialsPath = credentialsPath
             }.Build();
         }
-
-        /// <summary>
-        /// Returns a feature extractor. The actual API call will happen when accessing the features the first time.
-        /// </summary>
-        /// <param name="imagePath"></param>
-        /// <returns></returns>
+        
         public IFeatureExtractor AnalyseImage(string imagePath)
         {
             return new GcpFeatureExtractor(imagePath, _client);
         }
-
-        /// <summary>
-        /// Returns a feature extractor. The actual API call will happen when accessing the features the first time.
-        /// </summary>
-        /// <param name="imageStream"></param>
-        /// <returns></returns>
+        
         public IFeatureExtractor AnalyseImage(Stream imageStream)
         {
             return new GcpFeatureExtractor(imageStream, _client);
