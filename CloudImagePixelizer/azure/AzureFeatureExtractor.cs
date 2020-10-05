@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -13,11 +14,11 @@ namespace CloudImagePixelizer.azure
 {
     public class AzureFeatureExtractor : IFeatureExtractor
     {
-        private Stream _imageStream;
-        private const string BaseUrl = "http://{0}.cognitiveservices.azure.com/vision/v3.0/{1}";
-        private const string Ocr = "ocr";
+        private readonly byte[] _imageBytes;
+        private const string BaseUrl = "{0}vision/v3.0/{1}";
+        private const string TextDetection = "ocr";
         private const string ObjectDetection = "detect";
-        private const string FaceDetection = "analyse?visualFeatures=Faces";
+        private const string FaceDetection = "analyze?visualFeatures=Faces";
 
         private readonly string _endpoint;
         private readonly string _key;
@@ -30,31 +31,47 @@ namespace CloudImagePixelizer.azure
             Converters = new List<JsonConverter>{new OcrBoundingBoxConverter()}
         };
 
+        /// <summary>
+        /// Constructor for a feature extractor using Microsoft Azure API. Endpoint and key are located in your azure
+        /// resource under "resource management" in "keys and endpoint". Use the whole endpoint as string which should
+        /// look like <a href="https://your-resource-endpoint.cognitiveservices.azure.com/"/>. 
+        /// </summary>
+        /// <param name="imagePath"></param>
+        /// <param name="endpoint"></param>
+        /// <param name="key"></param>
         public AzureFeatureExtractor(string imagePath, string endpoint, string key)
         {
-            _imageStream = new MemoryStream();
-            Image image = Image.FromFile(imagePath);
-            image.Save(_imageStream, image.RawFormat);
+            _imageBytes = File.ReadAllBytes(imagePath);
             _endpoint = endpoint;
             _key = key;
         }
 
+        /// <summary>
+        /// Constructor for a feature extractor using Microsoft Azure API. Endpoint and key are located in your azure
+        /// resource under "resource management" in "keys and endpoint". Use the whole endpoint as string which should
+        /// look like <a href="https://your-resource-endpoint.cognitiveservices.azure.com/"/>. 
+        /// </summary>
+        /// <param name="imageStream"></param>
+        /// <param name="endpoint"></param>
+        /// <param name="key"></param>
         public AzureFeatureExtractor(Stream imageStream, string endpoint, string key)
         {
-            _imageStream = imageStream;
+            var br = new BinaryReader(imageStream);
+            _imageBytes = br.ReadBytes((int)imageStream.Length);
             _endpoint = endpoint;
             _key = key;
         }
 
         public IEnumerable<Rectangle> ExtractFaces()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, FaceDetection));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            _imageStream.CopyTo(http.GetRequestStream());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = http.GetResponse().GetResponseStream();
+            var responseMessage = client.PostAsync(string.Format(BaseUrl, _endpoint, FaceDetection), content).Result;
+            var stream = responseMessage.Content.ReadAsStreamAsync().Result;
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -64,13 +81,14 @@ namespace CloudImagePixelizer.azure
 
         public IEnumerable<Rectangle> ExtractCars()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, ObjectDetection));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            _imageStream.CopyTo(http.GetRequestStream());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = http.GetResponse().GetResponseStream();
+            var responseMessage = client.PostAsync(string.Format(BaseUrl, _endpoint, ObjectDetection), content).Result;
+            var stream = responseMessage.Content.ReadAsStreamAsync().Result;
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -82,13 +100,14 @@ namespace CloudImagePixelizer.azure
 
         public IEnumerable<Rectangle> ExtractText()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, Ocr));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            _imageStream.CopyTo(http.GetRequestStream());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = http.GetResponse().GetResponseStream();
+            var responseMessage = client.PostAsync(string.Format(BaseUrl, _endpoint, TextDetection), content).Result;
+            var stream = responseMessage.Content.ReadAsStreamAsync().Result;
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -99,13 +118,14 @@ namespace CloudImagePixelizer.azure
 
         public IEnumerable<Rectangle> ExtractPersons()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, ObjectDetection));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            _imageStream.CopyTo(http.GetRequestStream());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = http.GetResponse().GetResponseStream();
+            var responseMessage = client.PostAsync(string.Format(BaseUrl, _endpoint, ObjectDetection), content).Result;
+            var stream = responseMessage.Content.ReadAsStreamAsync().Result;
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -117,13 +137,14 @@ namespace CloudImagePixelizer.azure
 
         public async Task<IEnumerable<Rectangle>> ExtractFacesAsync()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, FaceDetection));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            await _imageStream.CopyToAsync(await http.GetRequestStreamAsync());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = (await http.GetResponseAsync()).GetResponseStream();
+            var responseMessage = await client.PostAsync(string.Format(BaseUrl, _endpoint, FaceDetection), content);
+            var stream = await responseMessage.Content.ReadAsStreamAsync();
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -133,13 +154,14 @@ namespace CloudImagePixelizer.azure
 
         public async Task<IEnumerable<Rectangle>> ExtractCarsAsync()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, ObjectDetection));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            await _imageStream.CopyToAsync(await http.GetRequestStreamAsync());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = (await http.GetResponseAsync()).GetResponseStream();
+            var responseMessage = await client.PostAsync(string.Format(BaseUrl, _endpoint, ObjectDetection), content);
+            var stream = await responseMessage.Content.ReadAsStreamAsync();
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -151,13 +173,14 @@ namespace CloudImagePixelizer.azure
 
         public async Task<IEnumerable<Rectangle>> ExtractTextAsync()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, Ocr));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            await _imageStream.CopyToAsync(await http.GetRequestStreamAsync());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = (await http.GetResponseAsync()).GetResponseStream();
+            var responseMessage = await client.PostAsync(string.Format(BaseUrl, _endpoint, TextDetection), content);
+            var stream = await responseMessage.Content.ReadAsStreamAsync();
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -168,13 +191,14 @@ namespace CloudImagePixelizer.azure
 
         public async Task<IEnumerable<Rectangle>> ExtractPersonsAsync()
         {
-            var http = WebRequest.Create(string.Format(BaseUrl, _endpoint, ObjectDetection));
-            http.Method = WebRequestMethods.Http.Post;
-            http.ContentType = "application/octet-stream";
-            http.Headers.Add("Opc-Apim-Subscription-Key", _key);
-            await _imageStream.CopyToAsync(await http.GetRequestStreamAsync());
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _key);
+            
+            var content = new ByteArrayContent(_imageBytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
-            var stream = (await http.GetResponseAsync()).GetResponseStream();
+            var responseMessage = await client.PostAsync(string.Format(BaseUrl, _endpoint, ObjectDetection), content);
+            var stream = await responseMessage.Content.ReadAsStreamAsync();
             if (stream == null) return null;
             
             using var reader = new StreamReader(stream, Encoding.UTF8);

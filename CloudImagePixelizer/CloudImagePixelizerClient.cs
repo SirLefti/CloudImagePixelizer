@@ -31,6 +31,7 @@ namespace CloudImagePixelizer
 
         public async Task<Stream> PixelateSingleImage(FileStream imageStream)
         {
+            
             var bitmap = SKBitmap.Decode(imageStream);
             var origin = SKCodec.Create(imageStream).EncodedOrigin;
             return await Pixelate(bitmap, origin, _cloudConnector.AnalyseImage(imageStream));

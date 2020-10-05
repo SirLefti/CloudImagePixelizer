@@ -9,7 +9,9 @@ namespace CloudImagePixelizer.azure
         private readonly string _key;
 
         /// <summary>
-        /// Constructor for a cloud connector using Microsoft Azure.
+        /// Constructor for a cloud connector using Microsoft Azure API. Endpoint and key are located in your azure
+        /// resource under "resource management" in "keys and endpoint". Use the whole endpoint as string which should
+        /// look like <a href="https://your-resource-endpoint.cognitiveservices.azure.com/"/>. 
         /// </summary>
         /// <param name="endpoint"></param>
         /// <param name="key"></param>
