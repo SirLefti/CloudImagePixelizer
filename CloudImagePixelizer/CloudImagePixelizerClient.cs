@@ -29,12 +29,12 @@ namespace CloudImagePixelizer
             return await Pixelate(bitmap, origin, _cloudConnector.AnalyseImage(imagePath));
         }
 
+        // TODO currently does not support correcting the image orientation
         public async Task<Stream> PixelateSingleImage(FileStream imageStream)
         {
-            
-            var bitmap = SKBitmap.Decode(imageStream);
-            var origin = SKCodec.Create(imageStream).EncodedOrigin;
-            return await Pixelate(bitmap, origin, _cloudConnector.AnalyseImage(imageStream));
+            byte[] bytes = new BinaryReader(imageStream).ReadBytes((int) imageStream.Length);
+            var bitmap = SKBitmap.Decode(bytes);
+            return await Pixelate(bitmap, SKEncodedOrigin.Default, _cloudConnector.AnalyseImage(imageStream));
         }
 
         public async Task PixelateSingleImage(string imagePath, string outputPath)
@@ -173,10 +173,7 @@ namespace CloudImagePixelizer
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
-
-            // TODO Test fix image orientation after pixelating
-
+            
             return surface.Snapshot().Encode(OutputFormat, OutputQuality).AsStream();
         }
 
