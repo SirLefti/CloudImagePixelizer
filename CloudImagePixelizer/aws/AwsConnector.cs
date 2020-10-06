@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.IO;
 using Amazon;
 using Amazon.Rekognition;
