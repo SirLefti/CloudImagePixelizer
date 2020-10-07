@@ -19,7 +19,9 @@ namespace CloudImagePixelizer.aws
 		{
 			_client = new AmazonRekognitionClient(new BasicAWSCredentials(accessKey, secretKey), endpoint);
 		}
-		
+
+		public string[] SupportedFileExtensions { get; } = {".jpg", ".jpeg", ".png"};
+
 		public IFeatureExtractor AnalyseImage(string imagePath)
 		{
 			return new AwsFeatureExtractor(imagePath, _client);

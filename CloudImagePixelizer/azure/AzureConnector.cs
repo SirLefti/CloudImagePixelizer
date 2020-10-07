@@ -20,7 +20,9 @@ namespace CloudImagePixelizer.azure
             _endpoint = endpoint;
             _key = key;
         }
-        
+
+        public string[] SupportedFileExtensions { get; } = {".jpg", ".jpeg", ".png", ".gif", ".bmp"};
+
         public IFeatureExtractor AnalyseImage(string imagePath)
         {
             return new AzureFeatureExtractor(imagePath, _endpoint, _key);
@@ -30,6 +32,5 @@ namespace CloudImagePixelizer.azure
         {
             return new AzureFeatureExtractor(imageStream, _endpoint, _key);
         }
-
     }
 }

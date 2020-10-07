@@ -60,8 +60,7 @@ namespace CloudImagePixelizer
 
         public async Task PixelateImageBatch(string inputDirectory, string outputDirectory, bool recursively)
         {
-            var allowedExtensions = new[] {".jpg", ".jpeg", ".png"};
-            var imageFiles = GetImageFiles(inputDirectory, allowedExtensions, recursively);
+            var imageFiles = GetImageFiles(inputDirectory, _cloudConnector.SupportedFileExtensions, recursively);
             foreach (var imageFile in imageFiles)
             {
                 await PixelateSingleImage(Path.Combine(inputDirectory, imageFile),

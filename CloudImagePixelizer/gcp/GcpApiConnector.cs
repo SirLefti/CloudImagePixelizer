@@ -14,7 +14,9 @@ namespace CloudImagePixelizer.gcp
         {
             _apiKey = apiKey;
         }
-        
+
+        public string[] SupportedFileExtensions { get; } = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".raw", ".ico", ".pdf", ".tiff"};
+
         public IFeatureExtractor AnalyseImage(string imagePath)
         {
             return new GcpApiFeatureExtractor(imagePath, _apiKey);

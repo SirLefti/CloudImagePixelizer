@@ -18,7 +18,9 @@ namespace CloudImagePixelizer.gcp
                 CredentialsPath = credentialsPath
             }.Build();
         }
-        
+
+        public string[] SupportedFileExtensions { get; } = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".raw", ".ico", ".pdf", ".tiff"};
+
         public IFeatureExtractor AnalyseImage(string imagePath)
         {
             return new GcpFeatureExtractor(imagePath, _client);
