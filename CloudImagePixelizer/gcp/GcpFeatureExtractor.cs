@@ -153,7 +153,22 @@ namespace CloudImagePixelizer.gcp
                 }
             });
 
-            return ObjectsResponse.LocalizedObjectAnnotations.Where(e => e.Name == " Person")
+            return ObjectsResponse.LocalizedObjectAnnotations.Where(e => e.Name == "Person")
+                .Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, Width, Height));
+        }
+
+        public IEnumerable<Rectangle> ExtractLicensePlates()
+        {
+            ObjectsResponse ??= _client.Annotate(new AnnotateImageRequest()
+            {
+                Image = _image,
+                Features =
+                {
+                    new Feature {Type = Feature.Types.Type.ObjectLocalization}
+                }
+            });
+
+            return ObjectsResponse.LocalizedObjectAnnotations.Where(e => e.Name == "License plate")
                 .Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, Width, Height));
         }
 
@@ -211,6 +226,20 @@ namespace CloudImagePixelizer.gcp
             });
 
             return ExtractPersons();
+        }
+
+        public async Task<IEnumerable<Rectangle>> ExtractLicensePlatesAsync()
+        {
+            ObjectsResponse ??= await _client.AnnotateAsync(new AnnotateImageRequest()
+            {
+                Image = _image,
+                Features =
+                {
+                    new Feature {Type = Feature.Types.Type.ObjectLocalization}
+                }
+            });
+
+            return ExtractLicensePlates();
         }
     }
 }

@@ -174,8 +174,7 @@ namespace CloudImagePixelizer.aws
                 _facesResponse = await _client.DetectFacesAsync(facesRequest);
             }
 
-            return _facesResponse.FaceDetails.Select(f =>
-                AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(f.BoundingBox, _width, _height));
+            return ExtractFaces();
         }
 
         public IEnumerable<Rectangle> ExtractFaces()
@@ -204,10 +203,7 @@ namespace CloudImagePixelizer.aws
                 _objectsResponse = await _client.DetectLabelsAsync(objectsRequest);
             }
 
-            return _objectsResponse.Labels.Where(l => l.Name == "Car")
-                .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
-                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox,
-                        _width, _height)) ?? Enumerable.Empty<Rectangle>();
+            return ExtractCars();
         }
 
         public IEnumerable<Rectangle> ExtractCars()
@@ -238,9 +234,7 @@ namespace CloudImagePixelizer.aws
                 _textResponse = await _client.DetectTextAsync(textRequest);
             }
 
-            return _textResponse.TextDetections.Select(t => t.Geometry.Polygon)
-                .Select(p => AmazonRekognitionCoordinateTranslator.RelativePolygonToAbsolute(p, _width,
-                    _height));
+            return ExtractText();
         }
 
         public IEnumerable<Rectangle> ExtractText()
@@ -270,10 +264,7 @@ namespace CloudImagePixelizer.aws
                 _objectsResponse = await _client.DetectLabelsAsync(objectsRequest);
             }
 
-            return _objectsResponse.Labels.Where(l => l.Name == "Person")
-                .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
-                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
-                        _height)) ?? Enumerable.Empty<Rectangle>();
+            return ExtractPersons();
         }
 
         public IEnumerable<Rectangle> ExtractPersons()
@@ -288,6 +279,37 @@ namespace CloudImagePixelizer.aws
             }
 
             return _objectsResponse.Labels.Where(l => l.Name == "Person")
+                .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
+                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
+                        _height)) ?? Enumerable.Empty<Rectangle>();
+        }
+        
+        public async Task<IEnumerable<Rectangle>> ExtractLicensePlatesAsync()
+        {
+            if (_objectsResponse == null)
+            {
+                var objectsRequest = new DetectLabelsRequest()
+                {
+                    Image = _rekognitionImage
+                };
+                _objectsResponse = await _client.DetectLabelsAsync(objectsRequest);
+            }
+
+            return ExtractLicensePlates();
+        }
+        
+        public IEnumerable<Rectangle> ExtractLicensePlates()
+        {
+            if (_objectsResponse == null)
+            {
+                var objectsRequest = new DetectLabelsRequest()
+                {
+                    Image = _rekognitionImage
+                };
+                _objectsResponse = _client.DetectLabelsAsync(objectsRequest).Result;
+            }
+
+            return _objectsResponse.Labels.Where(l => l.Name == "License Plate")
                 .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
                     AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
                         _height)) ?? Enumerable.Empty<Rectangle>();

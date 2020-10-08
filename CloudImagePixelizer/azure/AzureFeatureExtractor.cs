@@ -156,6 +156,25 @@ namespace CloudImagePixelizer.azure
                 .Select(person => person.Rectangle.AsRectangle());
         }
 
+        public IEnumerable<Rectangle> ExtractLicensePlates()
+        {
+            if (_objectsResponse == null)
+            {
+                var responseMessage =
+                    _client.PostAsync(string.Format(BaseUrl, _endpoint, ObjectDetection), _content).Result;
+                var stream = responseMessage.Content.ReadAsStreamAsync().Result;
+                if (stream == null) return null;
+
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                var response = reader.ReadToEnd();
+                _objectsResponse = JsonConvert.DeserializeObject<AnalysisResponse>(response, ObjectSettings);
+            }
+            
+            return _objectsResponse?.Objects
+                .Where(obj => obj.Object.Equals("Vehicle registration plate"))
+                .Select(person => person.Rectangle.AsRectangle());
+        }
+
         public async Task<IEnumerable<Rectangle>> ExtractFacesAsync()
         {
             if (_facesResponse == null)
@@ -170,8 +189,7 @@ namespace CloudImagePixelizer.azure
                 _facesResponse = JsonConvert.DeserializeObject<AnalysisResponse>(response, ObjectSettings);
             }
 
-            return _facesResponse?.Faces
-                .Select(face => face.FaceRectangle.AsRectangle());
+            return ExtractFaces();
         }
 
         public async Task<IEnumerable<Rectangle>> ExtractCarsAsync()
@@ -188,9 +206,7 @@ namespace CloudImagePixelizer.azure
                 _objectsResponse = JsonConvert.DeserializeObject<AnalysisResponse>(response, ObjectSettings);
             }
 
-            return _objectsResponse?.Objects
-                .Where(obj => obj.Object.Equals("car") || obj.Object.Equals("truck"))
-                .Select(car => car.Rectangle.AsRectangle());
+            return ExtractCars();
         }
 
         public async Task<IEnumerable<Rectangle>> ExtractTextAsync()
@@ -207,8 +223,7 @@ namespace CloudImagePixelizer.azure
                 _textResponse = JsonConvert.DeserializeObject<OcrResponse>(response, OcrSettings);
             }
 
-            return _textResponse?.Regions
-                .Select(region => region.BoundingBox.AsRectangle());
+            return ExtractText();
         }
 
         public async Task<IEnumerable<Rectangle>> ExtractPersonsAsync()
@@ -225,9 +240,24 @@ namespace CloudImagePixelizer.azure
                 _objectsResponse = JsonConvert.DeserializeObject<AnalysisResponse>(response, ObjectSettings);
             }
 
-            return _objectsResponse?.Objects
-                .Where(obj => obj.Object.Equals("person"))
-                .Select(person => person.Rectangle.AsRectangle());
+            return ExtractPersons();
+        }
+
+        public async Task<IEnumerable<Rectangle>> ExtractLicensePlatesAsync()
+        {
+            if (_objectsResponse == null)
+            {
+                var responseMessage =
+                    await _client.PostAsync(string.Format(BaseUrl, _endpoint, ObjectDetection), _content);
+                var stream = await responseMessage.Content.ReadAsStreamAsync();
+                if (stream == null) return null;
+
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                var response = await reader.ReadToEndAsync();
+                _objectsResponse = JsonConvert.DeserializeObject<AnalysisResponse>(response, ObjectSettings);
+            }
+
+            return ExtractLicensePlates();
         }
 
         private class OcrBoundingBoxConverter : JsonConverter<DetectedRectangle>

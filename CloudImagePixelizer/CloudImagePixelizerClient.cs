@@ -15,7 +15,7 @@ namespace CloudImagePixelizer
         public SKEncodedImageFormat OutputFormat = SKEncodedImageFormat.Jpeg;
         public int OutputQuality = 100;
         public FaceProcessing FaceProcessing = FaceProcessing.PixelateFaces;
-        public CarProcessing CarProcessing = CarProcessing.PixelateTextOnCars;
+        public CarProcessing CarProcessing = CarProcessing.PixelatePlatesAndTextOnCars;
 
         public CloudImagePixelizerClient(IConnector cloudConnector)
         {
@@ -132,13 +132,20 @@ namespace CloudImagePixelizer
 
             switch (CarProcessing)
             {
-                case CarProcessing.PixelateTextOnCars:
+                case CarProcessing.PixelatePlatesAndTextOnCars:
                 {
                     var text = await featureExtractor.ExtractTextAsync();
                     var cars = await featureExtractor.ExtractCarsAsync();
+                    var licensePlates = await featureExtractor.ExtractLicensePlatesAsync();
 
                     var mergeDistance = (int) (bitmap.Width * MergeFactor);
                     var merged = ImagePatchClusterizer.Clusterize(text, mergeDistance);
+
+                    foreach (var plate in licensePlates)
+                    {
+                        Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
+                            PixelSize);
+                    }
 
                     foreach (var car in cars)
                     {

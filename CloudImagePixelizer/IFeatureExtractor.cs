@@ -36,7 +36,14 @@ namespace CloudImagePixelizer
 		/// </summary>
 		/// <returns>Enumerable of rectangles each representing a person</returns>
 		public IEnumerable<Rectangle> ExtractPersons();
-		
+
+		/// <summary>
+		/// Extracts license plates from given image. If license plates have never been fetched yes, this will call the
+		/// cloud to analyze and extract license plates. See <see cref="ExtractLicensePlatesAync"/> for async approach.
+		/// </summary>
+		/// <returns>Enumerable of rectangles each representing a license plate</returns>
+		public IEnumerable<Rectangle> ExtractLicensePlates();
+
 		/// <summary>
 		/// Extracts faces from given image. If faces have never been fetched yet, this will call the cloud to analyze
 		/// and extract faces. See <see cref="ExtractFaces"/> for non-async approach.
@@ -64,5 +71,12 @@ namespace CloudImagePixelizer
 		/// </summary>
 		/// <returns>Enumerable of rectangles each representing a person</returns>
 		public Task<IEnumerable<Rectangle>> ExtractPersonsAsync();
+
+		/// <summary>
+		/// Extracts license plates from given image. If license plates have never been fetched yes, this will call the
+		/// cloud to analyze and extract license plates. See <see cref="ExtractLicensePlates"/> for non-async approach.
+		/// </summary>
+		/// <returns>Enumerable of rectangles each representing a license plate</returns>
+		public Task<IEnumerable<Rectangle>> ExtractLicensePlatesAsync();
 	}
 }
