@@ -96,6 +96,8 @@ namespace CloudImagePixelizer.gcp
         protected AnnotateImageResponse TextResponse;
         protected AnnotateImageResponse FacesResponse;
 
+        private readonly string[] _vehicles = {"Car", "Bus", "Motorcycle", "Truck"};
+
         public virtual IEnumerable<Rectangle> ExtractFaces()
         {
             FacesResponse ??= _client.Annotate(new AnnotateImageRequest()
@@ -122,7 +124,7 @@ namespace CloudImagePixelizer.gcp
                 }
             });
 
-            return ObjectsResponse.LocalizedObjectAnnotations.Where(e => e.Name == "Car")
+            return ObjectsResponse.LocalizedObjectAnnotations.Where(e => _vehicles.Contains(e.Name))
                 .Select(e => GoogleVisionCoordinateTranslator.RelativePolyToRectangle(e.BoundingPoly, Width, Height));
         }
 

@@ -115,7 +115,7 @@ namespace CloudImagePixelizer.azure
             }
 
             return _objectsResponse?.Objects
-                .Where(obj => obj.Object.Equals("car") || obj.Object.Equals("truck"))
+                .Where(obj => obj.Object.Equals("Land vehicle") || obj.HasParent("Land vehicle"))
                 .Select(car => car.Rectangle.AsRectangle());
         }
 
@@ -303,6 +303,11 @@ namespace CloudImagePixelizer.azure
             public double Confidence;
             public DetectedObject Parent;
             public DetectedRectangle Rectangle;
+
+            public bool HasParent(string name)
+            {
+                return Parent.Object.Equals(name) || Parent.HasParent(name);
+            }
         }
 
         public class DetectedFace

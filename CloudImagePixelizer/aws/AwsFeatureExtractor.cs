@@ -163,6 +163,8 @@ namespace CloudImagePixelizer.aws
         private readonly int _width;
         private readonly int _height;
 
+        private readonly string[] _vehicles = {"Car", "Bus", "Motorcycle", "Truck"};
+
         public async Task<IEnumerable<Rectangle>> ExtractFacesAsync()
         {
             if (_facesResponse == null)
@@ -217,7 +219,7 @@ namespace CloudImagePixelizer.aws
                 _objectsResponse = _client.DetectLabelsAsync(objectsRequest).Result;
             }
 
-            return _objectsResponse.Labels.Where(l => l.Name == "Car")
+            return _objectsResponse.Labels.Where(l => _vehicles.Contains(l.Name))
                 .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
                     AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox,
                         _width, _height)) ?? Enumerable.Empty<Rectangle>();
