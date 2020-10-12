@@ -2,6 +2,13 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
+        <PackOnBuild>true</PackOnBuild>
+        <Authors>SirLefti</Authors>
+        <PackageProjectUrl>https://github.com/SirLefti/CloudImagePixelizer</PackageProjectUrl>
+        <Description>Interface for low-effort image pixelizing using cloud technology.</Description>
+        <Title>CloudImagePixelizer</Title>
+        <PackageTags>cloud;microsoft azure;amazon web services;google cloud platform;computer vision;rekognition;vision ai</PackageTags>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
