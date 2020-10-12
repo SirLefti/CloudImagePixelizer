@@ -16,9 +16,9 @@ When using batch processing the client filters the given input directory for fil
 **Example:**
 ```C#
 static async Task Main() {
-    var connector = new GcpApiConnector("YOUR_API_KEY");
-    var client = new CloudImagePixelizerClient(connector);
-    await client.PixelateSingleImage("YOUR_INPUT_PATH", "YOUR_OUTPUT_PATH");
+	var connector = new GcpApiConnector("YOUR_API_KEY");
+	var client = new CloudImagePixelizerClient(connector);
+	await client.PixelateSingleImage("YOUR_INPUT_PATH", "YOUR_OUTPUT_PATH");
 }
 ```
 
@@ -29,7 +29,7 @@ If you are an advanced user only needing the prepared detection data, you can us
 **Using IConnector:**
 ```C#
 static async Task Main() {
-    var connector = new GcpConnector(Settings.GcpCredentialsPath);
+	var connector = new GcpConnector(Settings.GcpCredentialsPath);
 	var extractor = connector.AnalyseImage("YOUR_INPUT_PATH");
 	var cars = await extractor.ExtractCarsAsync();
 	foreach (var rectangle in cars)
@@ -41,7 +41,7 @@ static async Task Main() {
 **Using IFeatureExtractor:**
 ```C#
 static async Task Main() {
-    var extractor = new AzureFeatureExtractor("YOUR_INPUT_PATH", "YOUR_AZURE_ENDPOINT", "YOUR_AZURE_KEY");
+	var extractor = new AzureFeatureExtractor("YOUR_INPUT_PATH", "YOUR_AZURE_ENDPOINT", "YOUR_AZURE_KEY");
 	var faces = await extractor.ExtractFacesAsync();
 	foreach (var rectangle in faces)
 	{
@@ -56,20 +56,20 @@ The `CloudImagePixelizerClient` contains multiple configuration options to impro
 **Example:**
 ```C#
 static async Task Main() {
-    var connector = new GcpApiConnector("YOUR_API_KEY");
-    var client = new CloudImagePixelizerClient(connector)
-    {
-        // Enable license plates detection using object and text detection
+	var connector = new GcpApiConnector("YOUR_API_KEY");
+	var client = new CloudImagePixelizerClient(connector)
+	{
+		// Enable license plates detection using object and text detection
 		CarProcessing = CarProcessing.PixelatePlatesAndTextOnCars,
-        // Disable face detection
+		// Disable face detection
 		FaceProcessing = FaceProcessing.Skip,
-        // Set to distance to merge detected text blocks to 5%
+		// Set to distance to merge detected text blocks to 5%
 		MergeFactor = 0.05,
-        // Set the pixelation size to 24 pixels
+		// Set the pixelation size to 24 pixels
 		PixelSize = 24,
-        // Set image output format to PNG
+		// Set image output format to PNG
 		OutputFormat = SKEncodedImageFormat.Png,
-        // Set quality to 80
+		// Set quality to 80
 		OutputQuality = 80
 	};
 }
