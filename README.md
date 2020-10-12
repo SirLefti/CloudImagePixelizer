@@ -38,7 +38,7 @@ static async Task Main() {
 	}
 }
 ```
-**IFeatureExtractor:**
+**Using IFeatureExtractor:**
 ```C#
 static async Task Main() {
     var extractor = new AzureFeatureExtractor("YOUR_INPUT_PATH", "YOUR_AZURE_ENDPOINT", "YOUR_AZURE_KEY");
