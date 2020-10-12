@@ -76,11 +76,11 @@ static async Task Main() {
 ```
 In case you do not need faces to be pixelated (i.e. you do not want to or you know that there are no faces) you can configure this using the `Skip` option in `FaceProcessing`, same goes vice versa for `CarProcessing`. If you are okay with a less accurate pixelation, you can try the options `PixelateCars` and `PixelatePersons`. The client will only use object detection, which reduces the costs compared to the full feature set. `PixelatePlatesAndTextOnCars` will call the object and text detection, since license plates are usually not detected separately, but cars and texts are. Using `PixelateFaces` calls the face detection. As default, the whole feature set will be used, resulting in three API calls as shown below.
 
-| API calls needed            | Skip | PixelatePersons | PixelateFaces |
-|-----------------------------|:----:|:---------------:|:-------------:|
-| Skip                        |  0   |        1        |       1       |
-| PixelateCars                |  1   |        1        |       2       |
-| PixelatePlatesAndTextOnCars |  2   |        2        |       3       |
+| **API calls needed**            | **Skip** | **PixelatePersons** | **PixelateFaces** |
+|---------------------------------|:--------:|:-------------------:|:-----------------:|
+| **Skip**                        |    0     |          1          |         1         |
+| **PixelateCars**                |    1     |          1          |         2         |
+| **PixelatePlatesAndTextOnCars** |    2     |          2          |         3         |
 
 Take a look into the pricing of each cloud system (may vary depending on the location) to choose the right processing modes for you.
 
