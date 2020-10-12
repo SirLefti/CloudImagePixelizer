@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Google.Cloud.Vision.V1;
+using SkiaSharp;
 using Image = Google.Cloud.Vision.V1.Image;
 
 namespace CloudImagePixelizer.gcp
@@ -20,6 +21,7 @@ namespace CloudImagePixelizer.gcp
         /// <param name="credentialsPath"></param>
         public GcpFeatureExtractor(string imagePath, string credentialsPath)
         {
+            SetRotation(SKCodec.Create(imagePath).EncodedOrigin);
             var size = System.Drawing.Image.FromFile(imagePath).Size;
             Width = size.Width;
             Height = size.Height;
@@ -38,6 +40,7 @@ namespace CloudImagePixelizer.gcp
         /// <param name="credentialsPath"></param>
         public GcpFeatureExtractor(Stream imageStream, string credentialsPath)
         {
+            SetRotation(SKCodec.Create(imageStream).EncodedOrigin);
             var size = System.Drawing.Image.FromStream(imageStream).Size;
             Width = size.Width;
             Height = size.Height;
@@ -57,6 +60,7 @@ namespace CloudImagePixelizer.gcp
         /// <param name="client"></param>
         internal GcpFeatureExtractor(string imagePath, ImageAnnotatorClient client)
         {
+            SetRotation(SKCodec.Create(imagePath).EncodedOrigin);
             var size = System.Drawing.Image.FromFile(imagePath).Size;
             Width = size.Width;
             Height = size.Height;
@@ -72,23 +76,47 @@ namespace CloudImagePixelizer.gcp
         /// <param name="client"></param>
         internal GcpFeatureExtractor(Stream imageStream, ImageAnnotatorClient client)
         {
+            SetRotation(SKCodec.Create(imageStream).EncodedOrigin);
             var size = System.Drawing.Image.FromStream(imageStream).Size;
             Width = size.Width;
             Height = size.Height;
             _image = Image.FromStream(imageStream);
             _client = client;
         }
-
-        /// <summary>
-        /// Protected constructor just for the purpose of allowing an inherited alternative extractor.
-        /// </summary>
+        
         protected GcpFeatureExtractor()
         {
         }
 
+        /// <summary>
+        /// Sets the rotation-to-apply-property to the right enum value. Currently, this supports only non-flipping
+        /// origins since the translator only supports non-flipped images as well. The will be extended if I can get an
+        /// image, that is flipped, otherwise this is practically not testable
+        /// </summary>
+        /// <param name="origin"></param>
+        protected void SetRotation(SKEncodedOrigin origin)
+        {
+            switch (origin)
+            {
+                case SKEncodedOrigin.Default:
+                    _rotationToApplyForFaceProcessing = RotateFlipType.RotateNoneFlipNone;
+                    break;
+                case SKEncodedOrigin.RightTop:
+                    _rotationToApplyForFaceProcessing = RotateFlipType.Rotate90FlipNone;
+                    break;
+                case SKEncodedOrigin.BottomRight:
+                    _rotationToApplyForFaceProcessing = RotateFlipType.Rotate180FlipNone;
+                    break;
+                case SKEncodedOrigin.LeftBottom:
+                    _rotationToApplyForFaceProcessing = RotateFlipType.Rotate270FlipNone;
+                    break;
+            }
+        }
+        
         protected int Width;
         protected int Height;
         
+        private RotateFlipType _rotationToApplyForFaceProcessing;
         private readonly Image _image;
         private readonly ImageAnnotatorClient _client;
         
@@ -110,7 +138,8 @@ namespace CloudImagePixelizer.gcp
             });
 
             return FacesResponse.FaceAnnotations
-                .Select(f => GoogleVisionCoordinateTranslator.AbsolutePolyToRectangle(f.BoundingPoly));
+                .Select(f => GoogleVisionCoordinateTranslator.AbsolutePolyToRectangle(f.BoundingPoly))
+                .Select(f => GoogleVisionCoordinateTranslator.RotateRectangle(f, _rotationToApplyForFaceProcessing, Width, Height));
         }
 
         public virtual IEnumerable<Rectangle> ExtractCars()

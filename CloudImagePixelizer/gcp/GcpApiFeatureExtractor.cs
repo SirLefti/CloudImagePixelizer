@@ -10,6 +10,7 @@ using Google.Cloud.Vision.V1;
 using Google.Protobuf.Collections;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using SkiaSharp;
 using Image = System.Drawing.Image;
 
 namespace CloudImagePixelizer.gcp
@@ -37,6 +38,7 @@ namespace CloudImagePixelizer.gcp
         /// <param name="apiKey"></param>
         public GcpApiFeatureExtractor(string imagePath, string apiKey)
         {
+            SetRotation(SKCodec.Create(imagePath).EncodedOrigin);
             var size = Image.FromFile(imagePath).Size;
             Width = size.Width;
             Height = size.Height;
@@ -52,6 +54,7 @@ namespace CloudImagePixelizer.gcp
         /// <param name="apiKey"></param>
         public GcpApiFeatureExtractor(Stream imageStream, string apiKey)
         {
+            SetRotation(SKCodec.Create(imageStream).EncodedOrigin);
             var size = Image.FromStream(imageStream).Size;
             Width = size.Width;
             Height = size.Height;

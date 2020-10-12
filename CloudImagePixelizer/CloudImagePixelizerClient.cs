@@ -28,8 +28,8 @@ namespace CloudImagePixelizer
             var origin = SKCodec.Create(imagePath).EncodedOrigin;
             return await Pixelate(bitmap, origin, _cloudConnector.AnalyseImage(imagePath));
         }
-
-        // TODO currently does not support correcting the image orientation
+        
+        // TODO cannot extract origin from a file stream, because codec from stream will be null
         public async Task<Stream> PixelateSingleImage(FileStream imageStream)
         {
             byte[] bytes = new BinaryReader(imageStream).ReadBytes((int) imageStream.Length);
