@@ -16,6 +16,9 @@ namespace CloudImagePixelizer
         public int OutputQuality = 100;
         public FaceProcessing FaceProcessing = FaceProcessing.PixelateFaces;
         public CarProcessing CarProcessing = CarProcessing.PixelatePlatesAndTextOnCars;
+        public ILogger Logger = new NullLogger();
+
+        private string _imagePath;
 
         public CloudImagePixelizerClient(IConnector cloudConnector)
         {
@@ -24,6 +27,7 @@ namespace CloudImagePixelizer
 
         public async Task<Stream> PixelateSingleImage(string imagePath)
         {
+            _imagePath = imagePath;
             var bitmap = SKBitmap.Decode(imagePath);
             var origin = SKCodec.Create(imagePath).EncodedOrigin;
             return await Pixelate(bitmap, origin, _cloudConnector.AnalyseImage(imagePath));
@@ -32,6 +36,7 @@ namespace CloudImagePixelizer
         // TODO cannot extract origin from a file stream, because codec from stream will be null
         public async Task<Stream> PixelateSingleImage(FileStream imageStream)
         {
+            _imagePath = imageStream.Name;
             byte[] bytes = new BinaryReader(imageStream).ReadBytes((int) imageStream.Length);
             var bitmap = SKBitmap.Decode(bytes);
             return await Pixelate(bitmap, SKEncodedOrigin.Default, _cloudConnector.AnalyseImage(imageStream));
@@ -39,6 +44,7 @@ namespace CloudImagePixelizer
 
         public async Task PixelateSingleImage(string imagePath, string outputPath)
         {
+            _imagePath = imagePath;
             if (File.Exists(outputPath))
             {
                 File.Delete(outputPath);
@@ -63,6 +69,7 @@ namespace CloudImagePixelizer
             var imageFiles = GetImageFiles(inputDirectory, _cloudConnector.SupportedFileExtensions, recursively);
             foreach (var imageFile in imageFiles)
             {
+                _imagePath = imageFile;
                 await PixelateSingleImage(Path.Combine(inputDirectory, imageFile),
                     Path.Combine(outputDirectory, imageFile));
             }
@@ -104,22 +111,26 @@ namespace CloudImagePixelizer
             {
                 case FaceProcessing.PixelateFaces:
                 {
-                    var faces = await featureExtractor.ExtractFacesAsync();
+                    var faces = (await featureExtractor.ExtractFacesAsync()).ToArray();
+                    Logger.OnExtractedFaces(_imagePath, faces);
                     foreach (var face in faces)
                     {
                         Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap,
                             PixelSize);
+                        Logger.OnPixelatedFace(_imagePath, face);
                     }
 
                     break;
                 }
                 case FaceProcessing.PixelatePersons:
                 {
-                    var persons = await featureExtractor.ExtractPersonsAsync();
+                    var persons = (await featureExtractor.ExtractPersonsAsync()).ToArray();
+                    Logger.OnExtractedPersons(_imagePath, persons);
                     foreach (var person in persons)
                     {
                         Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
                             PixelSize);
+                        Logger.OnPixelatedPerson(_imagePath, person);
                     }
 
                     break;
@@ -134,17 +145,21 @@ namespace CloudImagePixelizer
             {
                 case CarProcessing.PixelatePlatesAndTextOnCars:
                 {
-                    var text = await featureExtractor.ExtractTextAsync();
-                    var cars = await featureExtractor.ExtractCarsAsync();
-                    var licensePlates = await featureExtractor.ExtractLicensePlatesAsync();
+                    var text = (await featureExtractor.ExtractTextAsync()).ToArray();
+                    Logger.OnExtractedText(_imagePath, text);
+                    var cars = (await featureExtractor.ExtractCarsAsync()).ToArray();
+                    Logger.OnExtractedCars(_imagePath, cars);
+                    var licensePlates = (await featureExtractor.ExtractLicensePlatesAsync()).ToArray();
+                    Logger.OnExtractedLicensePlates(_imagePath, licensePlates);
 
                     var mergeDistance = (int) (bitmap.Width * MergeFactor);
-                    var merged = ImagePatchClusterizer.Clusterize(text, mergeDistance);
+                    var merged = ImagePatchClusterizer.Clusterize(text, mergeDistance).ToArray();
 
                     foreach (var plate in licensePlates)
                     {
                         Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
                             PixelSize);
+                        Logger.OnPixelatedLicensePlate(_imagePath, plate);
                     }
 
                     foreach (var car in cars)
@@ -152,11 +167,16 @@ namespace CloudImagePixelizer
                         foreach (var patch in merged)
                         {
                             // If patch is inside of the car borders
-                            if (patch.Y >= car.Y && patch.X >= car.X && patch.Height - patch.Y <= car.Height - car.Y &&
-                                patch.Width - patch.X <= car.Width - car.X)
+                            if (patch.Y >= car.Y 
+                                && patch.X >= car.X 
+                                && patch.Y <= car.Y + car.Height
+                                && patch.X <= car.X + car.Width
+                                && patch.Width <= car.Width + car.X - patch.X
+                                && patch.Height <= car.Height + car.Y - patch.Y)
                             {
                                 Pixelate(canvas, SKRectI.Create(patch.X, patch.Y, patch.Width, patch.Height), bitmap,
                                     PixelSize);
+                                Logger.OnPixelatedText(_imagePath, patch);
                             }
                         }
                     }
@@ -165,11 +185,12 @@ namespace CloudImagePixelizer
                 }
                 case CarProcessing.PixelateCars:
                 {
-                    var cars = await featureExtractor.ExtractCarsAsync();
-
+                    var cars = (await featureExtractor.ExtractCarsAsync()).ToArray();
+                    Logger.OnExtractedCars(_imagePath, cars);
                     foreach (var car in cars)
                     {
                         Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, PixelSize);
+                        Logger.OnPixelatedCar(_imagePath, car);
                     }
 
                     break;

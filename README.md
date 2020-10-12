@@ -70,7 +70,9 @@ static async Task Main() {
 		// Set image output format to PNG
 		OutputFormat = SKEncodedImageFormat.Png,
 		// Set quality to 80
-		OutputQuality = 80
+		OutputQuality = 80,
+		// Set logger
+		Logger = new ConsoleLogger()
 	};
 }
 ```
@@ -91,6 +93,8 @@ Take a look into the pricing of each cloud system (may vary depending on the loc
 `OutputFormat` specifies the format when encoding the processed image back to your file system. The default is `Jpeg`.
 
 `OutputQuality` specifies the encoding quality. You might want to reduce this when processing a large amount of high resolution images. The default is 100 (maximum value).
+
+To keep track of the analysis results and processing, you can assign an `ILogger` implementing class to the `Logger` property. The default is `NullLogger` which means all logging events will be ignored. As an example implementation `ConsoleLogger` dumps all results into the console.
 
 ## Helpful Information
 This library is in an early state, thus the error handling was not the focus yet. It was developed on MacOS using JetBrains Rider.
