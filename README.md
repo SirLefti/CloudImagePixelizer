@@ -4,7 +4,7 @@ A C# interface to the most common cloud services to pixelate faces and license p
 ## Introduction
 This project provides an interface to the image recognition systems of Microsoft Azure, Amazon Web Services and the Google Cloud Platform. The analysis data will be prepared to pixelize your images with no extra code needed.
 
-This project was developed as part of a Bachelor thesis at the [GOD mbH](https://www.god.de/), a German software developing company.
+This project was developed as part of a Bachelor thesis at the [GOD mbH](https://www.god.de/), a German software development company. It is available at NuGet.
 
 ## How to use
 First of all, you need authorized access to at least one of the cloud services mentioned above. If you do not have one, you can create one, they all provide a limited free access for evaluation. I recommend using either AWS or Google Cloud for best results. Azure works fine for faces, but not for license plates.
@@ -22,7 +22,7 @@ static async Task Main() {
 }
 ```
 
-If you are an advanced user only needing the prepared detection data, you can use the `IConnector` and `IFeatureExtractor` classes separately
+If you are an advanced user only needing the prepared detection data, you can use the `IConnector` and `IFeatureExtractor` classes separately.
 
 **Examples:**
 
@@ -73,6 +73,13 @@ static async Task Main() {
 		OutputQuality = 80,
 		// Set logger
 		Logger = new ConsoleLogger()
+		// Set an outline around all pixelated areas
+		Outline = new SKPaint
+		{
+			Style = SKPaintStyle.Stroke,
+			Color = SKColors.Aqua,
+			StrokeWidth = 10	
+		}
 	};
 }
 ```
@@ -95,6 +102,8 @@ Take a look into the pricing of each cloud system (may vary depending on the loc
 `OutputQuality` specifies the encoding quality. You might want to reduce this when processing a large amount of high resolution images. The default is 100 (maximum value).
 
 To keep track of the analysis results and processing, you can assign an `ILogger` implementing class to the `Logger` property. The default is `NullLogger` which means all logging events will be ignored. As an example implementation `ConsoleLogger` dumps all results into the console.
+
+You can also add an `Outline` to mark the pixelated areas. The `Color` is up to you, depending on what colors are present in the image, but `Aqua`, `GreenYellow` or `OrangeRed` should work in most cases. The `StrokeWidth` should be around 10, depending on image resolution. The `style` should always be `Stroke`, the other options will also color the whole pixelated area. Try playing around with the other properties as well. The default value is null, so there will be no outline at all.
 
 ## Helpful Information
 This library is in an early state, thus the error handling was not the focus yet. It was developed on MacOS using JetBrains Rider.

@@ -17,6 +17,7 @@ namespace CloudImagePixelizer
         public FaceProcessing FaceProcessing = FaceProcessing.PixelateFaces;
         public CarProcessing CarProcessing = CarProcessing.PixelatePlatesAndTextOnCars;
         public ILogger Logger = new NullLogger();
+        public SKPaint Outline;
 
         private string _imagePath;
 
@@ -32,7 +33,7 @@ namespace CloudImagePixelizer
             var origin = SKCodec.Create(imagePath).EncodedOrigin;
             return await Pixelate(bitmap, origin, _cloudConnector.AnalyseImage(imagePath));
         }
-        
+
         // TODO cannot extract origin from a file stream, because codec from stream will be null
         public async Task<Stream> PixelateSingleImage(FileStream imageStream)
         {
@@ -49,7 +50,7 @@ namespace CloudImagePixelizer
             {
                 File.Delete(outputPath);
             }
-
+            
             var outputDirectory = new FileInfo(outputPath).Directory;
             if (outputDirectory != null && !outputDirectory.Exists)
             {
@@ -115,8 +116,17 @@ namespace CloudImagePixelizer
                     Logger.OnExtractedFaces(_imagePath, faces);
                     foreach (var face in faces)
                     {
-                        Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap,
-                            PixelSize);
+                        if (Outline != null)
+                        {
+                            Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap,
+                                PixelSize, Outline);
+                        }
+                        else
+                        {
+                            Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap,
+                                PixelSize);
+                        }
+
                         Logger.OnPixelatedFace(_imagePath, face);
                     }
 
@@ -128,8 +138,17 @@ namespace CloudImagePixelizer
                     Logger.OnExtractedPersons(_imagePath, persons);
                     foreach (var person in persons)
                     {
-                        Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
-                            PixelSize);
+                        if (Outline != null)
+                        {
+                            Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
+                                PixelSize, Outline);
+                        }
+                        else
+                        {
+                            Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
+                                PixelSize);
+                        }
+
                         Logger.OnPixelatedPerson(_imagePath, person);
                     }
 
@@ -155,30 +174,50 @@ namespace CloudImagePixelizer
                     var mergeDistance = (int) (bitmap.Width * MergeFactor);
                     var merged = ImagePatchClusterizer.Clusterize(text, mergeDistance).ToArray();
 
-                    foreach (var plate in licensePlates)
-                    {
-                        Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
-                            PixelSize);
-                        Logger.OnPixelatedLicensePlate(_imagePath, plate);
-                    }
-
                     foreach (var car in cars)
                     {
                         foreach (var patch in merged)
                         {
                             // If patch is inside of the car borders
-                            if (patch.Y >= car.Y 
-                                && patch.X >= car.X 
+                            if (patch.Y >= car.Y
+                                && patch.X >= car.X
                                 && patch.Y <= car.Y + car.Height
                                 && patch.X <= car.X + car.Width
                                 && patch.Width <= car.Width + car.X - patch.X
                                 && patch.Height <= car.Height + car.Y - patch.Y)
                             {
-                                Pixelate(canvas, SKRectI.Create(patch.X, patch.Y, patch.Width, patch.Height), bitmap,
-                                    PixelSize);
+                                if (Outline != null)
+                                {
+                                    Pixelate(canvas, SKRectI.Create(patch.X, patch.Y, patch.Width, patch.Height),
+                                        bitmap,
+                                        PixelSize, Outline);
+                                }
+                                else
+                                {
+                                    Pixelate(canvas, SKRectI.Create(patch.X, patch.Y, patch.Width, patch.Height),
+                                        bitmap,
+                                        PixelSize);
+                                }
+
                                 Logger.OnPixelatedText(_imagePath, patch);
                             }
                         }
+                    }
+                    
+                    foreach (var plate in licensePlates)
+                    {
+                        if (Outline != null)
+                        {
+                            Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
+                                PixelSize, Outline);
+                        }
+                        else
+                        {
+                            Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
+                                PixelSize);
+                        }
+
+                        Logger.OnPixelatedLicensePlate(_imagePath, plate);
                     }
 
                     break;
@@ -189,7 +228,16 @@ namespace CloudImagePixelizer
                     Logger.OnExtractedCars(_imagePath, cars);
                     foreach (var car in cars)
                     {
-                        Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, PixelSize);
+                        if (Outline != null)
+                        {
+                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, PixelSize,
+                                Outline);
+                        }
+                        else
+                        {
+                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, PixelSize);
+                        }
+
                         Logger.OnPixelatedCar(_imagePath, car);
                     }
 
@@ -200,8 +248,23 @@ namespace CloudImagePixelizer
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             return surface.Snapshot().Encode(OutputFormat, OutputQuality).AsStream();
+        }
+
+        /// <summary>
+        /// Pixelates a given image area defined by extractRect of the original image and draws it to the canvas.
+        /// </summary>
+        /// <param name="canvas"></param>
+        /// <param name="extractRect"></param>
+        /// <param name="original"></param>
+        /// <param name="pixelSize"></param>
+        /// <param name="outline"></param>
+        private static void Pixelate(SKCanvas canvas, SKRectI extractRect, SKBitmap original, int pixelSize,
+            SKPaint outline)
+        {
+            Pixelate(canvas, extractRect, original, pixelSize);
+            canvas.DrawRect(extractRect, outline);
         }
 
         /// <summary>
@@ -255,7 +318,7 @@ namespace CloudImagePixelizer
                         canvas.RotateDegrees(90);
                         canvas.DrawBitmap(bitmap, 0, 0);
                     }
-                    
+
                     return rotated;
 
                 case SKEncodedOrigin.LeftBottom:
