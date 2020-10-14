@@ -65,8 +65,8 @@ static async Task Main() {
 		FaceProcessing = FaceProcessing.Skip,
 		// Set to distance to merge detected text blocks to 5%
 		MergeFactor = 0.05,
-		// Set the pixelation size to 24 pixels
-		PixelSize = 24,
+		// Set the pixel size function to be always 32 pixels
+		PixelSize = (imgWidth, imgHeight, patchWidth, patchHeight) => 32;
 		// Set image output format to PNG
 		OutputFormat = SKEncodedImageFormat.Png,
 		// Set quality to 80
@@ -95,7 +95,11 @@ Take a look into the pricing of each cloud system (may vary depending on the loc
 
 `MergeFactor` is an option to prettify the pixelation results when using `PixelatePlatesAndTextOnCars`. The returned text blocks may not cover the whole license plate, instead there are often multiple part detections. Pixelating those individually may cause artifacts around the license plate. To avoid this, the results will be clustered and pixelated in one step for each calculated cluster. The `MergeFactor` provides the maximum distance between two textblocks or clusters to be merged together. The default is 0.025, which means 2.5% of the image width as pixels. 
 
-`PixelSize` is the absolute size of a pixel in the covered image areas. For high resolution images you might need a greater value. The default is 32.
+`PixelSizeFunction` allows to set a custom function to calculate the perfect pixel size for an area to pixelate. The function takes four integer arguments, being in order image width, image height, areas width and area height. Feel free to experiment to get the best result. The default implementation looks like the following.
+```C#
+PixelSizeFunction = (imgWidth, imgHeight, patchWidth, patchHeight) => Math.Max(patchWidth, patchHeight) / 16
+```
+This results in areas having 16 pixels along their longest border, so the size is determined by the areas size.
 
 `OutputFormat` specifies the format when encoding the processed image back to your file system. The default is `Jpeg`.
 

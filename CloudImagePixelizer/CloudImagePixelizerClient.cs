@@ -10,7 +10,9 @@ namespace CloudImagePixelizer
     public class CloudImagePixelizerClient
     {
         private readonly IConnector _cloudConnector;
-        public int PixelSize = 32;
+        private string _imagePath;
+        
+        public Func<int, int, int, int, int> PixelSizeFunction = (imgWidth, imgHeight, patchWidth, patchHeight) => Math.Max(patchWidth, patchHeight) / 16;
         public double MergeFactor = .025;
         public SKEncodedImageFormat OutputFormat = SKEncodedImageFormat.Jpeg;
         public int OutputQuality = 100;
@@ -18,8 +20,6 @@ namespace CloudImagePixelizer
         public CarProcessing CarProcessing = CarProcessing.PixelatePlatesAndTextOnCars;
         public ILogger Logger = new NullLogger();
         public SKPaint Outline;
-
-        private string _imagePath;
 
         public CloudImagePixelizerClient(IConnector cloudConnector)
         {
@@ -50,7 +50,7 @@ namespace CloudImagePixelizer
             {
                 File.Delete(outputPath);
             }
-            
+
             var outputDirectory = new FileInfo(outputPath).Directory;
             if (outputDirectory != null && !outputDirectory.Exists)
             {
@@ -118,13 +118,13 @@ namespace CloudImagePixelizer
                     {
                         if (Outline != null)
                         {
-                            Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap,
-                                PixelSize, Outline);
+                            Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap, Outline,
+                                PixelSizeFunction);
                         }
                         else
                         {
                             Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap,
-                                PixelSize);
+                                PixelSizeFunction);
                         }
 
                         Logger.OnPixelatedFace(_imagePath, face);
@@ -141,12 +141,12 @@ namespace CloudImagePixelizer
                         if (Outline != null)
                         {
                             Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
-                                PixelSize, Outline);
+                                Outline, PixelSizeFunction);
                         }
                         else
                         {
                             Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
-                                PixelSize);
+                                PixelSizeFunction);
                         }
 
                         Logger.OnPixelatedPerson(_imagePath, person);
@@ -189,32 +189,30 @@ namespace CloudImagePixelizer
                                 if (Outline != null)
                                 {
                                     Pixelate(canvas, SKRectI.Create(patch.X, patch.Y, patch.Width, patch.Height),
-                                        bitmap,
-                                        PixelSize, Outline);
+                                        bitmap, Outline, PixelSizeFunction);
                                 }
                                 else
                                 {
                                     Pixelate(canvas, SKRectI.Create(patch.X, patch.Y, patch.Width, patch.Height),
-                                        bitmap,
-                                        PixelSize);
+                                        bitmap, PixelSizeFunction);
                                 }
 
                                 Logger.OnPixelatedText(_imagePath, patch);
                             }
                         }
                     }
-                    
+
                     foreach (var plate in licensePlates)
                     {
                         if (Outline != null)
                         {
                             Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
-                                PixelSize, Outline);
+                                Outline, PixelSizeFunction);
                         }
                         else
                         {
                             Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
-                                PixelSize);
+                                PixelSizeFunction);
                         }
 
                         Logger.OnPixelatedLicensePlate(_imagePath, plate);
@@ -230,12 +228,13 @@ namespace CloudImagePixelizer
                     {
                         if (Outline != null)
                         {
-                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, PixelSize,
-                                Outline);
+                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, Outline,
+                                PixelSizeFunction);
                         }
                         else
                         {
-                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, PixelSize);
+                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap,
+                                PixelSizeFunction);
                         }
 
                         Logger.OnPixelatedCar(_imagePath, car);
@@ -258,12 +257,12 @@ namespace CloudImagePixelizer
         /// <param name="canvas"></param>
         /// <param name="extractRect"></param>
         /// <param name="original"></param>
-        /// <param name="pixelSize"></param>
         /// <param name="outline"></param>
-        private static void Pixelate(SKCanvas canvas, SKRectI extractRect, SKBitmap original, int pixelSize,
-            SKPaint outline)
+        /// <param name="pixelSizeFunction"></param>
+        private static void Pixelate(SKCanvas canvas, SKRectI extractRect, SKBitmap original, SKPaint outline,
+            Func<int, int, int, int, int> pixelSizeFunction)
         {
-            Pixelate(canvas, extractRect, original, pixelSize);
+            Pixelate(canvas, extractRect, original, pixelSizeFunction);
             canvas.DrawRect(extractRect, outline);
         }
 
@@ -273,9 +272,13 @@ namespace CloudImagePixelizer
         /// <param name="canvas"></param>
         /// <param name="extractRect"></param>
         /// <param name="original"></param>
-        /// <param name="pixelSize"></param>
-        private static void Pixelate(SKCanvas canvas, SKRectI extractRect, SKBitmap original, int pixelSize)
+        /// <param name="pixelSizeFunction"></param>
+        private static void Pixelate(SKCanvas canvas, SKRectI extractRect, SKBitmap original,
+            Func<int, int, int, int, int> pixelSizeFunction)
         {
+            var pixelSize =
+                pixelSizeFunction.Invoke(original.Width, original.Height, extractRect.Width, extractRect.Height);
+
             var downscaled = new SKBitmap(extractRect.Width / pixelSize, extractRect.Height / pixelSize);
             var upscaled = new SKBitmap(extractRect.Width, extractRect.Height);
             var sub = new SKBitmap();
