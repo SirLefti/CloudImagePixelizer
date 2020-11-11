@@ -306,7 +306,7 @@ namespace CloudImagePixelizer.azure
 
             public bool HasParent(string name)
             {
-                return Parent.Object.Equals(name) || Parent.HasParent(name);
+                return Parent != null && (Parent.Object.Equals(name) || Parent.HasParent(name));
             }
         }
 

@@ -16,3 +16,4 @@ riderModule.iml
 TestApplication/
 out/
 secrets.json
+nuget.config

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -34,7 +35,7 @@ namespace CloudImagePixelizer.aws
             {
                 // use standard bounding if image is not rotated or rotated by 180 degrees
                 _height = size.Height;
-                _width = size.Width;    
+                _width = size.Width;
             }
             else
             {
@@ -52,7 +53,7 @@ namespace CloudImagePixelizer.aws
 
             _client = new AmazonRekognitionClient(new BasicAWSCredentials(accessKey, secretKey), endpoint);
         }
-        
+
         /// <summary>
         /// Constructor for a feature extractor using Amazon Web Services SDK, optimized for analysing a single image.
         /// </summary>
@@ -69,7 +70,7 @@ namespace CloudImagePixelizer.aws
             {
                 // use standard bounding if image is not rotated or rotated by 180 degrees
                 _height = size.Height;
-                _width = size.Width;    
+                _width = size.Width;
             }
             else
             {
@@ -79,7 +80,7 @@ namespace CloudImagePixelizer.aws
             }
 
             _rekognitionImage = new Image();
-            
+
             var data = new byte[imageStream.Length];
             imageStream.Read(data, 0, (int) imageStream.Length);
             _rekognitionImage.Bytes = new MemoryStream(data);
@@ -102,7 +103,7 @@ namespace CloudImagePixelizer.aws
             {
                 // use standard bounding if image is not rotated or rotated by 180 degrees
                 _height = size.Height;
-                _width = size.Width;    
+                _width = size.Width;
             }
             else
             {
@@ -110,17 +111,17 @@ namespace CloudImagePixelizer.aws
                 _height = size.Width;
                 _width = size.Height;
             }
-            
+
             _rekognitionImage = new Image();
 
             using FileStream fs = new FileStream(imagePath, FileMode.Open, FileAccess.Read);
             var data = new byte[fs.Length];
             fs.Read(data, 0, (int) fs.Length);
             _rekognitionImage.Bytes = new MemoryStream(data);
-            
+
             _client = client;
         }
-        
+
         /// <summary>
         /// Constructor for a feature extractor using Amazon Web Services SDK, using a given annotator client,
         /// optimized to be used with a batch of images.
@@ -136,7 +137,7 @@ namespace CloudImagePixelizer.aws
             {
                 // use standard bounding if image is not rotated or rotated by 180 degrees
                 _height = size.Height;
-                _width = size.Width;    
+                _width = size.Width;
             }
             else
             {
@@ -144,13 +145,13 @@ namespace CloudImagePixelizer.aws
                 _height = size.Width;
                 _width = size.Height;
             }
-            
+
             _rekognitionImage = new Image();
-            
+
             var data = new byte[imageStream.Length];
             imageStream.Read(data, 0, (int) imageStream.Length);
             _rekognitionImage.Bytes = new MemoryStream(data);
-            
+
             _client = client;
         }
 
@@ -220,9 +221,11 @@ namespace CloudImagePixelizer.aws
             }
 
             return _objectsResponse.Labels.Where(l => _vehicles.Contains(l.Name))
-                .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
-                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox,
-                        _width, _height)) ?? Enumerable.Empty<Rectangle>();
+                //.Select(l => l.Instances)
+                .SelectMany(l => l.Instances)
+                .Select(i =>
+                    AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
+                        _height));
         }
 
         public async Task<IEnumerable<Rectangle>> ExtractTextAsync()
@@ -281,11 +284,11 @@ namespace CloudImagePixelizer.aws
             }
 
             return _objectsResponse.Labels.Where(l => l.Name == "Person")
-                .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
+                .SelectMany(l => l.Instances).Select(i =>
                     AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
-                        _height)) ?? Enumerable.Empty<Rectangle>();
+                        _height));
         }
-        
+
         public async Task<IEnumerable<Rectangle>> ExtractLicensePlatesAsync()
         {
             if (_objectsResponse == null)
@@ -299,7 +302,7 @@ namespace CloudImagePixelizer.aws
 
             return ExtractLicensePlates();
         }
-        
+
         public IEnumerable<Rectangle> ExtractLicensePlates()
         {
             if (_objectsResponse == null)
@@ -312,9 +315,9 @@ namespace CloudImagePixelizer.aws
             }
 
             return _objectsResponse.Labels.Where(l => l.Name == "License Plate")
-                .Select(l => l.Instances).SingleOrDefault()?.Select(i =>
+                .SelectMany(l => l.Instances).Select(i =>
                     AmazonRekognitionCoordinateTranslator.RelativeBoxToAbsolute(i.BoundingBox, _width,
-                        _height)) ?? Enumerable.Empty<Rectangle>();
+                        _height));
         }
     }
 }
