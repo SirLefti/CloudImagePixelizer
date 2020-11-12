@@ -73,8 +73,15 @@ static async Task Main() {
 		OutputQuality = 80,
 		// Set logger
 		Logger = new ConsoleLogger()
-		// Set an outline around all pixelated areas
-		Outline = new SKPaint
+		// Set an outline around all pixelated faces/persons
+		FaceOutline = new SKPaint
+		{
+			Style = SKPaintStyle.Stroke,
+			Color = SKColors.Aqua,
+			StrokeWidth = 10	
+		},
+		// Sets an outline around all pixelated license plates/cars
+		PlateOutline = new SKPaint
 		{
 			Style = SKPaintStyle.Stroke,
 			Color = SKColors.Aqua,
@@ -107,7 +114,7 @@ This results in areas having 16 pixels along their longest border, so the size i
 
 To keep track of the analysis results and processing, you can assign an `ILogger` implementing class to the `Logger` property. The default is `NullLogger` which means all logging events will be ignored. As an example implementation `ConsoleLogger` dumps all results into the console.
 
-You can also add an `Outline` to mark the pixelated areas. The `Color` is up to you, depending on what colors are present in the image, but `Aqua`, `GreenYellow` or `OrangeRed` should work in most cases. The `StrokeWidth` should be around 10, depending on image resolution. The `style` should always be `Stroke`, the other options will also color the whole pixelated area. Try playing around with the other properties as well. The default value is null, so there will be no outline at all.
+You can also add an `FaceOutline` and `PlateOutline` to mark the pixelated areas. The `Color` is up to you, depending on what colors are present in the image, but `Aqua`, `GreenYellow` or `OrangeRed` should work in most cases. The `StrokeWidth` should be around 10, depending on image resolution. The `style` should always be `Stroke`, the other options will also color the whole pixelated area. Try playing around with the other properties as well. The default value is null, so there will be no outline at all.
 
 ## Helpful Information
 This library is in an early state, thus the error handling was not the focus yet. It was developed on MacOS using JetBrains Rider.

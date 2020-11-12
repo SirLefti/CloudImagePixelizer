@@ -19,7 +19,8 @@ namespace CloudImagePixelizer
         public FaceProcessing FaceProcessing = FaceProcessing.PixelateFaces;
         public CarProcessing CarProcessing = CarProcessing.PixelatePlatesAndTextOnCars;
         public ILogger Logger = new NullLogger();
-        public SKPaint Outline;
+        public SKPaint FaceOutline;
+        public SKPaint PlateOutline;
 
         public CloudImagePixelizerClient(IConnector cloudConnector)
         {
@@ -116,9 +117,9 @@ namespace CloudImagePixelizer
                     Logger.OnExtractedFaces(_imagePath, faces);
                     foreach (var face in faces)
                     {
-                        if (Outline != null)
+                        if (FaceOutline != null)
                         {
-                            Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap, Outline,
+                            Pixelate(canvas, SKRectI.Create(face.X, face.Y, face.Width, face.Height), bitmap, FaceOutline,
                                 PixelSizeFunction);
                         }
                         else
@@ -138,10 +139,10 @@ namespace CloudImagePixelizer
                     Logger.OnExtractedPersons(_imagePath, persons);
                     foreach (var person in persons)
                     {
-                        if (Outline != null)
+                        if (FaceOutline != null)
                         {
                             Pixelate(canvas, SKRectI.Create(person.X, person.Y, person.Width, person.Height), bitmap,
-                                Outline, PixelSizeFunction);
+                                FaceOutline, PixelSizeFunction);
                         }
                         else
                         {
@@ -186,10 +187,10 @@ namespace CloudImagePixelizer
                                 && patch.Width <= car.Width + car.X - patch.X
                                 && patch.Height <= car.Height + car.Y - patch.Y)
                             {
-                                if (Outline != null)
+                                if (PlateOutline != null)
                                 {
                                     Pixelate(canvas, SKRectI.Create(patch.X, patch.Y, patch.Width, patch.Height),
-                                        bitmap, Outline, PixelSizeFunction);
+                                        bitmap, PlateOutline, PixelSizeFunction);
                                 }
                                 else
                                 {
@@ -204,10 +205,10 @@ namespace CloudImagePixelizer
 
                     foreach (var plate in licensePlates)
                     {
-                        if (Outline != null)
+                        if (PlateOutline != null)
                         {
                             Pixelate(canvas, SKRectI.Create(plate.X, plate.Y, plate.Width, plate.Height), bitmap,
-                                Outline, PixelSizeFunction);
+                                PlateOutline, PixelSizeFunction);
                         }
                         else
                         {
@@ -226,9 +227,9 @@ namespace CloudImagePixelizer
                     Logger.OnExtractedCars(_imagePath, cars);
                     foreach (var car in cars)
                     {
-                        if (Outline != null)
+                        if (PlateOutline != null)
                         {
-                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, Outline,
+                            Pixelate(canvas, SKRectI.Create(car.X, car.Y, car.Width, car.Height), bitmap, PlateOutline,
                                 PixelSizeFunction);
                         }
                         else
